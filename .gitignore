@@ -1,3 +1,7 @@
+# ---- General project hygiene ----
+# Ignore temporary and generated files so they do not clutter Git or get accidentally committed.
+# Beginners: these are usually files created by builds, editors, or crashes, not source code you want to keep.
+
 # Miscellaneous
 *.class
 *.lock
@@ -7,9 +11,9 @@
 .buildlog/
 .history
 
-
-
-# Flutter repo-specific
+# ---- Flutter / Dart project files ----
+# These are common generated files for Flutter apps.
+# They are recreated automatically during building, so they should not be tracked in Git.
 /bin/cache/
 /bin/internal/bootstrap.bat
 /bin/internal/bootstrap.sh
@@ -117,3 +121,18 @@ app.*.symbols
 !**/ios/**/default.perspectivev3
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
 !/dev/ci/**/Gemfile.lock
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+# Local database
+*.db
+*.sqlite
+*.sqlite3
+
+# Local backend data
+data/
