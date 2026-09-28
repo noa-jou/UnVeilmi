@@ -1,6 +1,8 @@
 const API_BASE_URL = "http://127.0.0.1:8000";
 
 const MAX_ARTICLE_NAME_LENGTH = 50;
+const MIN_STORAGE_HOURS = 1;
+const MAX_STORAGE_HOURS = 8760;
 
 const VEILMI_PREFIX = "VEILMI1:";
 const VEILMI_VERSION = 1;
@@ -16,145 +18,23 @@ const SALT_LENGTH = 16;
 const NONCE_LENGTH = 12;
 const MAC_LENGTH = 16;
 
+const BYTES_PER_KB = 1024;
+const HOURS_PER_DAY = 24;
+const USD_PER_KB_DAY = 1;
 
-/*
- * -------------------------------------------------
- * Demo Pricing
- * -------------------------------------------------
- *
- * This is only a simulated payment system.
- *
- * Current rule:
- *
- * USD 1
- * × each started 1 KB
- * × each started 24-hour period
- *
- * Examples:
- *
- * 800 bytes / 24 hours
- * -> USD 1
- *
- * 1500 bytes / 24 hours
- * -> USD 2
- *
- * 1500 bytes / 48 hours
- * -> USD 4
- *
- * The result is always a whole-number USD amount.
- */
-
-function calculateDemoPrice(ciphertextBytes, storageHours) {
-    const kbUnits = Math.max(
-        1,
-        Math.ceil(ciphertextBytes / 1024)
-    );
-
-    const dayUnits = Math.max(
-        1,
-        Math.ceil(storageHours / 24)
-    );
-
-    return kbUnits * dayUnits;
-}
-
-
-/*
- * -------------------------------------------------
- * Publish State
- * -------------------------------------------------
- *
- * These values remember what the user has already
- * successfully checked.
- */
 
 const publishState = {
     verifiedArticleName: null,
+    verifiedCiphertext: null,
 
     paymentCompleted: false,
-
     paymentFingerprint: null,
 };
 
 
-/*
- * -------------------------------------------------
- * API Helpers
- * -------------------------------------------------
- */
-
-async function apiRequest(path, options = {}) {
-    const response = await fetch(
-        `${API_BASE_URL}${path}`,
-        options
-    );
-
-    let data = null;
-
-    try {
-        data = await response.json();
-    } catch {
-        data = null;
-    }
-
-    if (!response.ok) {
-        const message =
-            data?.detail ||
-            `Request failed with status ${response.status}.`;
-
-        const error = new Error(message);
-
-        error.status = response.status;
-
-        throw error;
-    }
-
-    return data;
-}
-
-
-async function checkArticleName(articleName) {
-    const query = new URLSearchParams({
-        article_name: articleName,
-    });
-
-    return apiRequest(
-        `/posts/check-name?${query.toString()}`
-    );
-}
-
-
-async function getPost(articleName) {
-    const encodedName =
-        encodeURIComponent(articleName);
-
-    return apiRequest(
-        `/posts/${encodedName}`
-    );
-}
-
-
-async function createPost(post) {
-    return apiRequest(
-        "/posts",
-        {
-            method: "POST",
-
-            headers: {
-                "Content-Type": "application/json",
-            },
-
-            body: JSON.stringify(post),
-        }
-    );
-}
-
-
-/*
- * -------------------------------------------------
- * General Helpers
- * -------------------------------------------------
- */
+/* -------------------------------------------------
+   General helpers
+------------------------------------------------- */
 
 function byId(id) {
     return document.getElementById(id);
@@ -185,14 +65,12 @@ function randomInt(max) {
         return 0;
     }
 
-    if (
-        window.crypto &&
-        window.crypto.getRandomValues
-    ) {
+    if (window.crypto?.getRandomValues) {
         const values =
             new Uint32Array(1);
 
-        window.crypto.getRandomValues(values);
+        window.crypto
+            .getRandomValues(values);
 
         return values[0] % max;
     }
@@ -203,19 +81,179 @@ function randomInt(max) {
 }
 
 
-async function copyText(text, button) {
+/* -------------------------------------------------
+   API helpers
+------------------------------------------------- */
+
+function formatApiError(data, status) {
+
+    if (
+        typeof data?.detail === "string"
+    ) {
+        return data.detail;
+    }
+
+
+    if (
+        Array.isArray(data?.detail)
+    ) {
+        return data.detail
+            .map((item) => {
+
+                const location =
+                    Array.isArray(item.loc)
+                        ? item.loc.join(" → ")
+                        : "request";
+
+
+                return (
+                    `${location}: ${item.msg}`
+                );
+            })
+            .join("; ");
+    }
+
+
+    if (
+        data?.detail &&
+        typeof data.detail === "object"
+    ) {
+        try {
+            return JSON.stringify(
+                data.detail
+            );
+        } catch {
+            // Use generic message below.
+        }
+    }
+
+
+    return (
+        `Request failed with status ${status}.`
+    );
+}
+
+
+async function apiRequest(
+    path,
+    options = {}
+) {
+
+    const response =
+        await fetch(
+            `${API_BASE_URL}${path}`,
+            options
+        );
+
+
+    let data = null;
+
+
+    try {
+        data =
+            await response.json();
+    } catch {
+        data = null;
+    }
+
+
+    if (!response.ok) {
+
+        const error =
+            new Error(
+                formatApiError(
+                    data,
+                    response.status
+                )
+            );
+
+
+        error.status =
+            response.status;
+
+        error.data =
+            data;
+
+
+        throw error;
+    }
+
+
+    return data;
+}
+
+
+async function checkArticleName(
+    articleName
+) {
+
+    const query =
+        new URLSearchParams({
+            article_name:
+                articleName,
+        });
+
+
+    return apiRequest(
+        `/posts/check-name?${query.toString()}`
+    );
+}
+
+
+async function getPost(
+    articleName
+) {
+
+    return apiRequest(
+        `/posts/${encodeURIComponent(articleName)}`
+    );
+}
+
+
+async function createPost(
+    post
+) {
+
+    return apiRequest(
+        "/posts",
+        {
+            method: "POST",
+
+            headers: {
+                "Content-Type":
+                    "application/json",
+            },
+
+            body:
+                JSON.stringify(post),
+        }
+    );
+}
+
+
+async function copyText(
+    text,
+    button
+) {
+
     if (!text) {
         return;
     }
 
-    await navigator.clipboard.writeText(text);
+
+    await navigator.clipboard
+        .writeText(text);
+
 
     if (button) {
+
         const oldText =
             button.textContent;
 
+
         button.textContent =
             "Copied";
+
 
         setTimeout(
             () => {
@@ -228,21 +266,15 @@ async function copyText(text, button) {
 }
 
 
-/*
- * -------------------------------------------------
- * Veilmi Format Validation
- * -------------------------------------------------
- *
- * This checks the structure of a Veilmi ciphertext.
- *
- * It does NOT decrypt the message.
- * It does NOT know the passphrase.
- */
+/* -------------------------------------------------
+   Veilmi format validation
+------------------------------------------------- */
 
 function decodeBase64Url(
     value,
     fieldName
 ) {
+
     if (
         typeof value !== "string" ||
         value.length === 0
@@ -252,16 +284,20 @@ function decodeBase64Url(
         );
     }
 
+
     if (
-        !/^[A-Za-z0-9_-]+={0,2}$/.test(value)
+        !/^[A-Za-z0-9_-]+={0,2}$/
+            .test(value)
     ) {
         throw new Error(
             `Veilmi field '${fieldName}' is not valid Base64URL.`
         );
     }
 
+
     const unpadded =
         value.replace(/=+$/, "");
+
 
     if (
         unpadded.length % 4 === 1
@@ -270,6 +306,7 @@ function decodeBase64Url(
             `Veilmi field '${fieldName}' is not valid Base64URL.`
         );
     }
+
 
     const standardBase64 =
         unpadded
@@ -285,7 +322,9 @@ function decodeBase64Url(
             ) % 4
         );
 
+
     let binary;
+
 
     try {
         binary =
@@ -296,8 +335,10 @@ function decodeBase64Url(
         );
     }
 
+
     return Uint8Array.from(
         binary,
+
         (character) =>
             character.charCodeAt(0)
     );
@@ -307,11 +348,14 @@ function decodeBase64Url(
 function validateVeilmiCiphertext(
     encodedMessage
 ) {
+
     if (
-        typeof encodedMessage !== "string"
+        typeof encodedMessage
+        !== "string"
     ) {
         return {
             valid: false,
+
             message:
                 "Veilmi ciphertext must be text.",
         };
@@ -325,6 +369,7 @@ function validateVeilmiCiphertext(
     ) {
         return {
             valid: false,
+
             message:
                 "Invalid Veilmi message prefix.",
         };
@@ -340,6 +385,7 @@ function validateVeilmiCiphertext(
     if (!payload) {
         return {
             valid: false,
+
             message:
                 "Veilmi message payload is empty.",
         };
@@ -347,6 +393,7 @@ function validateVeilmiCiphertext(
 
 
     try {
+
         const jsonBytes =
             decodeBase64Url(
                 payload,
@@ -356,17 +403,22 @@ function validateVeilmiCiphertext(
 
         let jsonText;
 
+
         try {
+
             jsonText =
                 new TextDecoder(
                     "utf-8",
                     {
                         fatal: true,
                     }
-                ).decode(
-                    jsonBytes
-                );
+                )
+                    .decode(
+                        jsonBytes
+                    );
+
         } catch {
+
             throw new Error(
                 "Veilmi message payload is not valid UTF-8."
             );
@@ -375,12 +427,16 @@ function validateVeilmiCiphertext(
 
         let envelope;
 
+
         try {
+
             envelope =
                 JSON.parse(
                     jsonText
                 );
+
         } catch {
+
             throw new Error(
                 "Veilmi message payload is not valid JSON."
             );
@@ -413,6 +469,7 @@ function validateVeilmiCiphertext(
             const field
             of requiredFields
         ) {
+
             if (
                 !(field in envelope)
             ) {
@@ -435,7 +492,8 @@ function validateVeilmiCiphertext(
 
 
         if (
-            typeof envelope.k !== "string"
+            typeof envelope.k
+            !== "string"
         ) {
             throw new Error(
                 "Veilmi field 'k' must be a string."
@@ -456,8 +514,14 @@ function validateVeilmiCiphertext(
 
         for (
             const field
-            of ["s", "n", "c", "m"]
+            of [
+                "s",
+                "n",
+                "c",
+                "m",
+            ]
         ) {
+
             if (
                 typeof envelope[field]
                 !== "string"
@@ -505,17 +569,20 @@ function validateVeilmiCiphertext(
                 "s"
             );
 
+
         const nonce =
             decodeBase64Url(
                 envelope.n,
                 "n"
             );
 
+
         const ciphertext =
             decodeBase64Url(
                 envelope.c,
                 "c"
             );
+
 
         const mac =
             decodeBase64Url(
@@ -569,7 +636,9 @@ function validateVeilmiCiphertext(
             message:
                 "Valid Veilmi ciphertext.",
         };
+
     } catch (error) {
+
         return {
             valid: false,
 
@@ -580,20 +649,23 @@ function validateVeilmiCiphertext(
 }
 
 
-/*
- * -------------------------------------------------
- * Article Name Validation
- * -------------------------------------------------
- */
+/* -------------------------------------------------
+   Article Name
+------------------------------------------------- */
 
 function validateArticleNameLocally(
     articleName
 ) {
+
     const length =
-        unicodeLength(articleName);
+        unicodeLength(
+            articleName
+        );
 
 
-    if (length === 0) {
+    if (
+        length === 0
+    ) {
         return {
             valid: false,
 
@@ -611,7 +683,9 @@ function validateArticleNameLocally(
             valid: false,
 
             message:
-                `Article Name must be ${MAX_ARTICLE_NAME_LENGTH} characters or fewer.`,
+                `Article Name is ${length} characters. `
+                +
+                `Maximum is ${MAX_ARTICLE_NAME_LENGTH}.`,
         };
     }
 
@@ -623,24 +697,36 @@ function validateArticleNameLocally(
 }
 
 
-/*
- * Create typo-like suggestions by swapping
- * neighboring characters.
- *
- * Example:
- *
- * home
- * ->
- * hoem
- */
+function updateArticleNameCount() {
+
+    const value =
+        byId("article-name")
+            ?.value
+        ?? "";
+
+
+    setText(
+        byId(
+            "article-name-count"
+        ),
+
+        `${unicodeLength(value)} / ${MAX_ARTICLE_NAME_LENGTH} characters`
+    );
+}
+
 
 function createTypoCandidates(
     articleName
 ) {
-    const characters =
-        Array.from(articleName);
 
-    const candidates = [];
+    const characters =
+        Array.from(
+            articleName
+        );
+
+
+    const candidates =
+        [];
 
 
     for (
@@ -648,9 +734,18 @@ function createTypoCandidates(
         i < characters.length - 1;
         i += 1
     ) {
+
         if (
             characters[i]
             === characters[i + 1]
+            ||
+            /\s/.test(
+                characters[i]
+            )
+            ||
+            /\s/.test(
+                characters[i + 1]
+            )
         ) {
             continue;
         }
@@ -664,9 +759,9 @@ function createTypoCandidates(
             copy[i],
             copy[i + 1],
         ] = [
-                copy[i + 1],
-                copy[i],
-            ];
+            copy[i + 1],
+            copy[i],
+        ];
 
 
         const candidate =
@@ -674,10 +769,18 @@ function createTypoCandidates(
 
 
         if (
-            candidate !== articleName &&
+            candidate
+            !== articleName
+            &&
             !candidates.includes(
                 candidate
             )
+            &&
+            unicodeLength(
+                candidate
+            )
+            <=
+            MAX_ARTICLE_NAME_LENGTH
         ) {
             candidates.push(
                 candidate
@@ -686,28 +789,28 @@ function createTypoCandidates(
     }
 
 
-    /*
-     * Shuffle the candidates so the suggestion
-     * does not always look predictable.
-     */
-
     for (
         let i =
             candidates.length - 1;
+
         i > 0;
+
         i -= 1
     ) {
+
         const j =
-            randomInt(i + 1);
+            randomInt(
+                i + 1
+            );
 
 
         [
             candidates[i],
             candidates[j],
         ] = [
-                candidates[j],
-                candidates[i],
-            ];
+            candidates[j],
+            candidates[i],
+        ];
     }
 
 
@@ -715,31 +818,30 @@ function createTypoCandidates(
 }
 
 
-/*
- * Fallback suggestion.
- *
- * Used when the Article Name is too short
- * or swapping characters does not produce
- * another useful name.
- */
-
 function createFallbackCandidate(
     articleName
 ) {
+
     const suffix =
         String(
-            randomInt(90) + 10
+            randomInt(90)
+            + 10
         );
 
 
     const characters =
-        Array.from(articleName);
+        Array.from(
+            articleName
+        );
 
 
     while (
-        characters.length +
-        suffix.length +
-        1 >
+        characters.length
+        +
+        suffix.length
+        +
+        1
+        >
         MAX_ARTICLE_NAME_LENGTH
     ) {
         characters.pop();
@@ -752,14 +854,10 @@ function createFallbackCandidate(
 }
 
 
-/*
- * Every suggestion is checked against
- * the backend before it is shown.
- */
-
 async function findAvailableArticleNameSuggestion(
     articleName
 ) {
+
     const candidates =
         createTypoCandidates(
             articleName
@@ -770,6 +868,7 @@ async function findAvailableArticleNameSuggestion(
         const candidate
         of candidates
     ) {
+
         const result =
             await checkArticleName(
                 candidate
@@ -784,16 +883,14 @@ async function findAvailableArticleNameSuggestion(
     }
 
 
-    /*
-     * If character swapping fails,
-     * try a short random suffix.
-     */
-
     for (
         let attempt = 0;
+
         attempt < 10;
+
         attempt += 1
     ) {
+
         const candidate =
             createFallbackCandidate(
                 articleName
@@ -818,19 +915,17 @@ async function findAvailableArticleNameSuggestion(
 }
 
 
-/*
- * -------------------------------------------------
- * Article Name State
- * -------------------------------------------------
- */
-
 function resetArticleNameVerification() {
-    publishState.verifiedArticleName =
+
+    publishState
+        .verifiedArticleName =
         null;
 
 
     setText(
-        byId("article-name-status"),
+        byId(
+            "article-name-status"
+        ),
         ""
     );
 
@@ -843,51 +938,53 @@ function resetArticleNameVerification() {
     );
 
 
-    const useSuggestionButton =
+    const button =
         byId(
             "use-suggested-name"
         );
 
 
-    if (
-        useSuggestionButton
-    ) {
-        useSuggestionButton.hidden =
+    if (button) {
+
+        button.hidden =
             true;
 
+
         delete (
-            useSuggestionButton
+            button
                 .dataset
                 .suggestion
         );
     }
 
 
+    updateArticleNameCount();
+
     updateSendButton();
 }
 
 
-/*
- * -------------------------------------------------
- * Check Article Name
- * -------------------------------------------------
- */
-
 async function handleCheckArticleName() {
+
     const input =
-        byId("article-name");
+        byId(
+            "article-name"
+        );
+
 
     const status =
         byId(
             "article-name-status"
         );
 
+
     const suggestionText =
         byId(
             "article-name-suggestion"
         );
 
-    const useSuggestionButton =
+
+    const button =
         byId(
             "use-suggested-name"
         );
@@ -897,13 +994,14 @@ async function handleCheckArticleName() {
         input.value.trim();
 
 
-    const localValidation =
+    const validation =
         validateArticleNameLocally(
             articleName
         );
 
 
-    publishState.verifiedArticleName =
+    publishState
+        .verifiedArticleName =
         null;
 
 
@@ -913,14 +1011,14 @@ async function handleCheckArticleName() {
     );
 
 
-    if (
-        useSuggestionButton
-    ) {
-        useSuggestionButton.hidden =
+    if (button) {
+
+        button.hidden =
             true;
 
+
         delete (
-            useSuggestionButton
+            button
                 .dataset
                 .suggestion
         );
@@ -928,12 +1026,14 @@ async function handleCheckArticleName() {
 
 
     if (
-        !localValidation.valid
+        !validation.valid
     ) {
+
         setText(
             status,
-            localValidation.message
+            validation.message
         );
+
 
         updateSendButton();
 
@@ -948,6 +1048,7 @@ async function handleCheckArticleName() {
 
 
     try {
+
         const result =
             await checkArticleName(
                 articleName
@@ -957,6 +1058,7 @@ async function handleCheckArticleName() {
         if (
             result.available
         ) {
+
             publishState
                 .verifiedArticleName =
                 articleName;
@@ -964,7 +1066,7 @@ async function handleCheckArticleName() {
 
             setText(
                 status,
-                "Article Name is available."
+                "Article Name is available. ✓"
             );
 
 
@@ -976,7 +1078,8 @@ async function handleCheckArticleName() {
 
         setText(
             status,
-            "Article Name is already in use. Looking for an available suggestion..."
+
+            "Article Name is already in use. Looking for a suggestion..."
         );
 
 
@@ -986,7 +1089,10 @@ async function handleCheckArticleName() {
             );
 
 
-        if (!suggestion) {
+        if (
+            !suggestion
+        ) {
+
             setText(
                 suggestionText,
 
@@ -1007,19 +1113,20 @@ async function handleCheckArticleName() {
         );
 
 
-        if (
-            useSuggestionButton
-        ) {
-            useSuggestionButton.hidden =
+        if (button) {
+
+            button.hidden =
                 false;
 
 
-            useSuggestionButton
+            button
                 .dataset
                 .suggestion =
                 suggestion;
         }
+
     } catch (error) {
+
         setText(
             status,
 
@@ -1032,17 +1139,13 @@ async function handleCheckArticleName() {
 }
 
 
-/*
- * -------------------------------------------------
- * Use Suggested Article Name
- * -------------------------------------------------
- */
-
 function handleUseSuggestedName() {
+
     const button =
         byId(
             "use-suggested-name"
         );
+
 
     const input =
         byId(
@@ -1051,12 +1154,14 @@ function handleUseSuggestedName() {
 
 
     const suggestion =
-        button?.dataset
+        button
+            ?.dataset
             .suggestion;
 
 
     if (
-        !suggestion ||
+        !suggestion
+        ||
         !input
     ) {
         return;
@@ -1066,11 +1171,6 @@ function handleUseSuggestedName() {
     input.value =
         suggestion;
 
-
-    /*
-     * This exact suggestion was already checked
-     * against the backend.
-     */
 
     publishState
         .verifiedArticleName =
@@ -1082,7 +1182,7 @@ function handleUseSuggestedName() {
             "article-name-status"
         ),
 
-        "Suggested Article Name is available."
+        "Suggested Article Name is available. ✓"
     );
 
 
@@ -1090,7 +1190,6 @@ function handleUseSuggestedName() {
         byId(
             "article-name-suggestion"
         ),
-
         ""
     );
 
@@ -1099,97 +1198,350 @@ function handleUseSuggestedName() {
         true;
 
 
+    updateArticleNameCount();
+
     updateSendButton();
 }
 
 
-/*
- * -------------------------------------------------
- * Payment State
- * -------------------------------------------------
- */
+/* -------------------------------------------------
+   Ciphertext
+------------------------------------------------- */
 
-function resetPayment() {
-    publishState.paymentCompleted =
-        false;
+function resetCiphertextVerification() {
 
-    publishState.paymentFingerprint =
+    publishState
+        .verifiedCiphertext =
         null;
 
 
     setText(
-        byId("payment-status"),
+        byId(
+            "ciphertext-status"
+        ),
         ""
     );
 
 
-    const payButton =
-        byId("pay-button");
+    resetPayment();
 
-
-    if (
-        payButton
-    ) {
-        payButton.disabled =
-            true;
-    }
-
+    clearQuote();
 
     updateSendButton();
 }
 
 
-/*
- * -------------------------------------------------
- * Quote
- * -------------------------------------------------
- */
+function handleCheckCiphertext() {
 
-function getCurrentQuote() {
     const ciphertext =
-        byId("ciphertext")
-            ?.value
-            .trim()
-        ?? "";
+        byId(
+            "ciphertext"
+        )
+            .value
+            .trim();
 
 
-    const storageHours =
-        Number(
-            byId(
-                "storage-hours"
-            )?.value
-        );
-
-
-    const veilmiValidation =
+    const result =
         validateVeilmiCiphertext(
             ciphertext
         );
 
 
     if (
-        !veilmiValidation.valid
+        !result.valid
+    ) {
+
+        publishState
+            .verifiedCiphertext =
+            null;
+
+
+        setText(
+            byId(
+                "ciphertext-status"
+            ),
+
+            `Invalid Veilmi ciphertext: ${result.message}`
+        );
+
+
+        resetPayment();
+
+        clearQuote();
+
+        updateSendButton();
+
+        return;
+    }
+
+
+    publishState
+        .verifiedCiphertext =
+        ciphertext;
+
+
+    setText(
+        byId(
+            "ciphertext-status"
+        ),
+
+        "Valid Veilmi ciphertext. ✓"
+    );
+
+
+    resetPayment();
+
+    updateQuote();
+
+    updateSendButton();
+}
+
+
+function handleClearCiphertext() {
+
+    const input =
+        byId(
+            "ciphertext"
+        );
+
+
+    input.value =
+        "";
+
+
+    resetCiphertextVerification();
+
+    input.focus();
+}
+
+
+/* -------------------------------------------------
+   Storage validation and pricing
+------------------------------------------------- */
+
+function validateStorageHours(
+    rawValue
+) {
+
+    if (
+        rawValue === ""
     ) {
         return {
             valid: false,
 
-            reason:
-                veilmiValidation.message,
+            message:
+                "Please enter a storage duration.",
+        };
+    }
+
+
+    const hours =
+        Number(
+            rawValue
+        );
+
+
+    if (
+        !Number.isInteger(hours)
+        ||
+        hours
+        <
+        MIN_STORAGE_HOURS
+    ) {
+        return {
+            valid: false,
+
+            message:
+                `Storage duration must be at least ${MIN_STORAGE_HOURS} hour.`,
         };
     }
 
 
     if (
-        !Number.isInteger(
+        hours
+        >
+        MAX_STORAGE_HOURS
+    ) {
+        return {
+            valid: false,
+
+            message:
+                `Storage duration cannot exceed ${MAX_STORAGE_HOURS} hours (365 days).`,
+        };
+    }
+
+
+    return {
+        valid: true,
+
+        hours,
+
+        message: "",
+    };
+}
+
+
+function calculateDemoPrice(
+    ciphertextBytes,
+    storageHours
+) {
+
+    const freeTier =
+        ciphertextBytes
+        <=
+        BYTES_PER_KB
+        &&
+        storageHours
+        <=
+        HOURS_PER_DAY;
+
+
+    if (
+        freeTier
+    ) {
+        return {
+            freeTier: true,
+
+            rawPrice: 0,
+
+            price: 0,
+        };
+    }
+
+
+    const rawPrice =
+        (
+            ciphertextBytes
+            /
+            BYTES_PER_KB
+        )
+        *
+        (
             storageHours
-        ) ||
-        storageHours <= 0
+            /
+            HOURS_PER_DAY
+        )
+        *
+        USD_PER_KB_DAY;
+
+
+    return {
+        freeTier: false,
+
+        rawPrice,
+
+        price:
+            Math.ceil(
+                rawPrice
+            ),
+    };
+}
+
+
+function clearQuote() {
+
+    setText(
+        byId(
+            "quote-size"
+        ),
+        "—"
+    );
+
+
+    setText(
+        byId(
+            "quote-hours"
+        ),
+        "—"
+    );
+
+
+    setText(
+        byId(
+            "quote-calculation"
+        ),
+        "—"
+    );
+
+
+    setText(
+        byId(
+            "quote-price"
+        ),
+        "—"
+    );
+
+
+    const payButton =
+        byId(
+            "pay-button"
+        );
+
+
+    if (
+        payButton
+    ) {
+
+        payButton.disabled =
+            true;
+
+
+        payButton.textContent =
+            "Pay";
+    }
+}
+
+
+function getCurrentQuote() {
+
+    const ciphertext =
+        byId(
+            "ciphertext"
+        )
+            ?.value
+            .trim()
+        ?? "";
+
+
+    const storageRawValue =
+        byId(
+            "storage-hours"
+        )
+            ?.value
+        ?? "";
+
+
+    if (
+        publishState
+            .verifiedCiphertext
+        !==
+        ciphertext
+        ||
+        !ciphertext
     ) {
         return {
             valid: false,
 
             reason:
-                "Storage hours must be a positive whole number.",
+                "Please check the Veilmi ciphertext first.",
+        };
+    }
+
+
+    const storageValidation =
+        validateStorageHours(
+            storageRawValue
+        );
+
+
+    if (
+        !storageValidation.valid
+    ) {
+        return {
+            valid: false,
+
+            reason:
+                storageValidation.message,
         };
     }
 
@@ -1200,10 +1552,11 @@ function getCurrentQuote() {
         );
 
 
-    const price =
+    const pricing =
         calculateDemoPrice(
             ciphertextBytes,
-            storageHours
+
+            storageValidation.hours
         );
 
 
@@ -1214,45 +1567,48 @@ function getCurrentQuote() {
 
         ciphertextBytes,
 
-        storageHours,
+        storageHours:
+            storageValidation.hours,
 
-        price,
+        freeTier:
+            pricing.freeTier,
+
+        rawPrice:
+            pricing.rawPrice,
+
+        price:
+            pricing.price,
     };
 }
 
 
-/*
- * This remembers exactly what the user
- * agreed to pay for.
- *
- * If the message, storage duration,
- * or price changes, the old payment
- * becomes invalid.
- */
-
-function quoteFingerprint(
-    quote
-) {
-    return JSON.stringify({
-        ciphertext:
-            quote.ciphertext,
-
-        storageHours:
-            quote.storageHours,
-
-        price:
-            quote.price,
-    });
-}
-
-
-/*
- * -------------------------------------------------
- * Update Quote Display
- * -------------------------------------------------
- */
-
 function updateQuote() {
+
+    const storageRawValue =
+        byId(
+            "storage-hours"
+        )
+            ?.value
+        ?? "";
+
+
+    const storageValidation =
+        validateStorageHours(
+            storageRawValue
+        );
+
+
+    setText(
+        byId(
+            "storage-status"
+        ),
+
+        storageValidation.valid
+            ? ""
+            : storageValidation.message
+    );
+
+
     const quote =
         getCurrentQuote();
 
@@ -1260,48 +1616,10 @@ function updateQuote() {
     if (
         !quote.valid
     ) {
-        setText(
-            byId(
-                "ciphertext-status"
-            ),
 
-            quote.reason
-        );
+        clearQuote();
 
-
-        setText(
-            byId("quote-size"),
-            "—"
-        );
-
-
-        setText(
-            byId("quote-hours"),
-            "—"
-        );
-
-
-        setText(
-            byId("quote-price"),
-            "—"
-        );
-
-
-        const payButton =
-            byId(
-                "pay-button"
-            );
-
-
-        if (
-            payButton
-        ) {
-            payButton.disabled =
-                true;
-        }
-
-
-        resetPayment();
+        updateSendButton();
 
         return;
     }
@@ -1309,29 +1627,56 @@ function updateQuote() {
 
     setText(
         byId(
-            "ciphertext-status"
+            "quote-size"
         ),
-
-        "Valid Veilmi ciphertext."
-    );
-
-
-    setText(
-        byId("quote-size"),
 
         `${quote.ciphertextBytes} bytes`
     );
 
 
     setText(
-        byId("quote-hours"),
+        byId(
+            "quote-hours"
+        ),
 
         `${quote.storageHours} hours`
     );
 
 
+    if (
+        quote.freeTier
+    ) {
+
+        setText(
+            byId(
+                "quote-calculation"
+            ),
+
+            `Free tier: ${quote.ciphertextBytes} bytes ≤ 1024 bytes `
+            +
+            `and ${quote.storageHours} hours ≤ 24 hours.`
+        );
+
+    } else {
+
+        setText(
+            byId(
+                "quote-calculation"
+            ),
+
+            `ceil((${quote.ciphertextBytes} ÷ 1024) × `
+            +
+            `(${quote.storageHours} ÷ 24) × USD 1) `
+            +
+            `= USD ${quote.price}`
+        );
+    }
+
+
     setText(
-        byId("quote-price"),
+        byId(
+            "quote-price"
+        ),
 
         `USD ${quote.price}`
     );
@@ -1346,12 +1691,17 @@ function updateQuote() {
     if (
         payButton
     ) {
+
         payButton.disabled =
             false;
 
 
         payButton.textContent =
-            `Pay USD ${quote.price}`;
+            quote.price === 0
+
+                ? "Confirm Free Storage"
+
+                : `Pay USD ${quote.price}`;
     }
 
 
@@ -1359,13 +1709,50 @@ function updateQuote() {
 }
 
 
-/*
- * -------------------------------------------------
- * Fake Payment
- * -------------------------------------------------
- */
+/* -------------------------------------------------
+   Fake payment
+------------------------------------------------- */
+
+function quoteFingerprint(
+    quote
+) {
+
+    return JSON.stringify({
+        ciphertext:
+            quote.ciphertext,
+
+        storageHours:
+            quote.storageHours,
+
+        price:
+            quote.price,
+    });
+}
+
+
+function resetPayment() {
+
+    publishState
+        .paymentCompleted =
+        false;
+
+
+    publishState
+        .paymentFingerprint =
+        null;
+
+
+    setText(
+        byId(
+            "payment-status"
+        ),
+        ""
+    );
+}
+
 
 function handleFakePayment() {
+
     const quote =
         getCurrentQuote();
 
@@ -1373,51 +1760,67 @@ function handleFakePayment() {
     if (
         !quote.valid
     ) {
+
+        resetPayment();
+
+
         setText(
             byId(
                 "payment-status"
             ),
 
-            "The quote is no longer valid."
+            quote.reason
         );
 
 
-        resetPayment();
+        updateSendButton();
 
         return;
     }
 
 
-    publishState.paymentCompleted =
+    publishState
+        .paymentCompleted =
         true;
 
 
-    publishState.paymentFingerprint =
+    publishState
+        .paymentFingerprint =
         quoteFingerprint(
             quote
         );
 
 
-    setText(
-        byId(
-            "payment-status"
-        ),
+    if (
+        quote.price === 0
+    ) {
 
-        `Payment successful — USD ${quote.price} (simulation).`
-    );
+        setText(
+            byId(
+                "payment-status"
+            ),
+
+            "Free storage confirmed — USD 0. ✓"
+        );
+
+    } else {
+
+        setText(
+            byId(
+                "payment-status"
+            ),
+
+            `Payment successful — USD ${quote.price} (simulation). ✓`
+        );
+    }
 
 
     updateSendButton();
 }
 
 
-/*
- * -------------------------------------------------
- * Check Whether Payment Still Matches
- * -------------------------------------------------
- */
-
 function paymentMatchesCurrentQuote() {
+
     if (
         !publishState
             .paymentCompleted
@@ -1448,13 +1851,12 @@ function paymentMatchesCurrentQuote() {
 }
 
 
-/*
- * -------------------------------------------------
- * Send Button State
- * -------------------------------------------------
- */
+/* -------------------------------------------------
+   Send / Publish
+------------------------------------------------- */
 
 function updateSendButton() {
+
     const sendButton =
         byId(
             "send-button"
@@ -1468,30 +1870,51 @@ function updateSendButton() {
     }
 
 
-    const currentArticleName =
+    const articleName =
         byId(
             "article-name"
-        )?.value
+        )
+            ?.value
             .trim()
         ?? "";
 
 
-    const nameStillVerified =
-        (
-            publishState
-                .verifiedArticleName
-            ===
-            currentArticleName
-        );
+    const ciphertext =
+        byId(
+            "ciphertext"
+        )
+            ?.value
+            .trim()
+        ?? "";
 
 
     const quote =
         getCurrentQuote();
 
 
+    const articleNameVerified =
+        publishState
+            .verifiedArticleName
+        ===
+        articleName
+        &&
+        articleName !== "";
+
+
+    const ciphertextVerified =
+        publishState
+            .verifiedCiphertext
+        ===
+        ciphertext
+        &&
+        ciphertext !== "";
+
+
     sendButton.disabled =
         !(
-            nameStillVerified
+            articleNameVerified
+            &&
+            ciphertextVerified
             &&
             quote.valid
             &&
@@ -1500,15 +1923,10 @@ function updateSendButton() {
 }
 
 
-/*
- * -------------------------------------------------
- * Final Send
- * -------------------------------------------------
- */
-
 async function handleSend(
     event
 ) {
+
     event.preventDefault();
 
 
@@ -1520,39 +1938,110 @@ async function handleSend(
             .trim();
 
 
+    const ciphertext =
+        byId(
+            "ciphertext"
+        )
+            .value
+            .trim();
+
+
     const publishStatus =
         byId(
             "publish-status"
         );
 
 
-    /*
-     * FINAL CHECK
-     *
-     * 1. Article Name format
-     * 2. Article Name still available
-     * 3. Veilmi ciphertext still valid
-     * 4. Payment still matches
-     * 5. POST to backend
-     */
-
-
-    const localNameCheck =
+    const nameValidation =
         validateArticleNameLocally(
             articleName
         );
 
 
     if (
-        !localNameCheck.valid
+        !nameValidation.valid
     ) {
+
         setText(
             publishStatus,
-            localNameCheck.message
+
+            nameValidation.message
         );
 
 
         resetArticleNameVerification();
+
+        return;
+    }
+
+
+    if (
+        publishState
+            .verifiedArticleName
+        !==
+        articleName
+    ) {
+
+        setText(
+            publishStatus,
+
+            "Please check the Article Name again before sending."
+        );
+
+
+        updateSendButton();
+
+        return;
+    }
+
+
+    if (
+        publishState
+            .verifiedCiphertext
+        !==
+        ciphertext
+    ) {
+
+        setText(
+            publishStatus,
+
+            "Please check the Veilmi ciphertext again before sending."
+        );
+
+
+        updateSendButton();
+
+        return;
+    }
+
+
+    const finalVeilmiCheck =
+        validateVeilmiCiphertext(
+            ciphertext
+        );
+
+
+    if (
+        !finalVeilmiCheck.valid
+    ) {
+
+        publishState
+            .verifiedCiphertext =
+            null;
+
+
+        setText(
+            publishStatus,
+
+            `Cannot send: ${finalVeilmiCheck.message}`
+        );
+
+
+        resetPayment();
+
+        clearQuote();
+
+        updateSendButton();
 
         return;
     }
@@ -1565,6 +2054,7 @@ async function handleSend(
     if (
         !quote.valid
     ) {
+
         setText(
             publishStatus,
 
@@ -1574,6 +2064,8 @@ async function handleSend(
 
         resetPayment();
 
+        updateSendButton();
+
         return;
     }
 
@@ -1581,14 +2073,17 @@ async function handleSend(
     if (
         !paymentMatchesCurrentQuote()
     ) {
+
         setText(
             publishStatus,
 
-            "Payment is missing or no longer matches the current ciphertext and storage duration."
+            "Payment or free-storage confirmation is missing, or no longer matches the current post."
         );
 
 
         resetPayment();
+
+        updateSendButton();
 
         return;
     }
@@ -1602,9 +2097,6 @@ async function handleSend(
 
 
     try {
-        /*
-         * Check Article Name one more time.
-         */
 
         const nameResult =
             await checkArticleName(
@@ -1615,6 +2107,7 @@ async function handleSend(
         if (
             !nameResult.available
         ) {
+
             publishState
                 .verifiedArticleName =
                 null;
@@ -1625,7 +2118,7 @@ async function handleSend(
                     "article-name-status"
                 ),
 
-                "Article Name became unavailable. Please choose another name."
+                "Article Name is already in use."
             );
 
 
@@ -1642,45 +2135,16 @@ async function handleSend(
         }
 
 
-        /*
-         * Check Veilmi format one more time.
-         */
-
-        const finalVeilmiCheck =
-            validateVeilmiCiphertext(
-                quote.ciphertext
-            );
-
-
-        if (
-            !finalVeilmiCheck.valid
-        ) {
-            setText(
-                publishStatus,
-
-                `Cannot send: ${finalVeilmiCheck.message}`
-            );
-
-
-            resetPayment();
-
-            return;
-        }
-
-
         setText(
             publishStatus,
+
             "Sending..."
         );
 
 
-        /*
-         * Backend performs the final authoritative
-         * validation again.
-         */
-
         const result =
             await createPost({
+
                 article_name:
                     articleName,
 
@@ -1698,7 +2162,7 @@ async function handleSend(
         setText(
             publishStatus,
 
-            "Published successfully."
+            "Published successfully. ✓"
         );
 
 
@@ -1711,6 +2175,20 @@ async function handleSend(
         );
 
 
+        const publishedResult =
+            byId(
+                "published-result"
+            );
+
+
+        if (
+            publishedResult
+        ) {
+            publishedResult.hidden =
+                false;
+        }
+
+
         const copyNameButton =
             byId(
                 "copy-article-name"
@@ -1720,6 +2198,7 @@ async function handleSend(
         if (
             copyNameButton
         ) {
+
             copyNameButton.disabled =
                 false;
 
@@ -1731,13 +2210,13 @@ async function handleSend(
         }
 
 
-        /*
-         * This Article Name is now used.
-         * The payment also cannot be reused.
-         */
-
         publishState
             .verifiedArticleName =
+            null;
+
+
+        publishState
+            .verifiedCiphertext =
             null;
 
 
@@ -1752,10 +2231,13 @@ async function handleSend(
 
 
         updateSendButton();
+
     } catch (error) {
+
         if (
             error.status === 409
         ) {
+
             publishState
                 .verifiedArticleName =
                 null;
@@ -1783,15 +2265,14 @@ async function handleSend(
 }
 
 
-/*
- * -------------------------------------------------
- * Find Existing Post
- * -------------------------------------------------
- */
+/* -------------------------------------------------
+   Find / Retrieve
+------------------------------------------------- */
 
 async function handleSearch(
     event
 ) {
+
     event.preventDefault();
 
 
@@ -1815,6 +2296,18 @@ async function handleSearch(
         );
 
 
+    const copyButton =
+        byId(
+            "copy-ciphertext"
+        );
+
+
+    const resultSection =
+        byId(
+            "search-result"
+        );
+
+
     setText(
         searchStatus,
         ""
@@ -1827,6 +2320,30 @@ async function handleSearch(
     );
 
 
+    if (
+        resultSection
+    ) {
+        resultSection.hidden =
+            true;
+    }
+
+
+    if (
+        copyButton
+    ) {
+
+        copyButton.disabled =
+            true;
+
+
+        delete (
+            copyButton
+                .dataset
+                .copyValue
+        );
+    }
+
+
     const validation =
         validateArticleNameLocally(
             articleName
@@ -1836,11 +2353,13 @@ async function handleSearch(
     if (
         !validation.valid
     ) {
+
         setText(
             searchStatus,
 
             validation.message
         );
+
 
         return;
     }
@@ -1854,6 +2373,7 @@ async function handleSearch(
 
 
     try {
+
         const post =
             await getPost(
                 articleName
@@ -1863,7 +2383,7 @@ async function handleSearch(
         setText(
             searchStatus,
 
-            "Ciphertext found."
+            "Ciphertext found. ✓"
         );
 
 
@@ -1874,15 +2394,18 @@ async function handleSearch(
         );
 
 
-        const copyButton =
-            byId(
-                "copy-ciphertext"
-            );
+        if (
+            resultSection
+        ) {
+            resultSection.hidden =
+                false;
+        }
 
 
         if (
             copyButton
         ) {
+
             copyButton.disabled =
                 false;
 
@@ -1892,16 +2415,21 @@ async function handleSearch(
                 .copyValue =
                 post.ciphertext;
         }
+
     } catch (error) {
+
         if (
             error.status === 404
         ) {
+
             setText(
                 searchStatus,
 
                 "Article not found or expired."
             );
+
         } else {
+
             setText(
                 searchStatus,
 
@@ -1911,95 +2439,124 @@ async function handleSearch(
     }
 }
 
-/*
- * -------------------------------------------------
- * Page Navigation
- * -------------------------------------------------
- */
 
-function showPage(pageName) {
+/* -------------------------------------------------
+   Page navigation
+------------------------------------------------- */
+
+function showPage(
+    pageName
+) {
+
     const publishPage =
-        byId("publish-page");
+        byId(
+            "publish-page"
+        );
+
 
     const searchPage =
-        byId("search-page");
+        byId(
+            "search-page"
+        );
 
 
     if (
-        !publishPage ||
+        !publishPage
+        ||
         !searchPage
     ) {
         return;
     }
 
 
-    if (
-        pageName === "search"
-    ) {
-        publishPage.hidden =
-            true;
+    const showSearch =
+        pageName === "search";
 
-        searchPage.hidden =
-            false;
-    } else {
-        publishPage.hidden =
-            false;
 
-        searchPage.hidden =
-            true;
-    }
+    publishPage.hidden =
+        showSearch;
+
+
+    searchPage.hidden =
+        !showSearch;
+
+
+    byId(
+        "show-publish-page"
+    )
+        ?.setAttribute(
+            "aria-current",
+
+            showSearch
+                ? "false"
+                : "page"
+        );
+
+
+    byId(
+        "show-search-page"
+    )
+        ?.setAttribute(
+            "aria-current",
+
+            showSearch
+                ? "page"
+                : "false"
+        );
 }
 
-/*
- * -------------------------------------------------
- * Page Setup
- * -------------------------------------------------
- */
+
+/* -------------------------------------------------
+   Page setup
+------------------------------------------------- */
 
 document.addEventListener(
     "DOMContentLoaded",
     () => {
-        const showPublishButton =
-            byId("show-publish-page");
 
-        const showSearchButton =
-            byId("show-search-page");
-
-
-        if (
-            showPublishButton
-        ) {
-            showPublishButton
-                .addEventListener(
-                    "click",
-                    () => {
-                        showPage("publish");
-                    }
-                );
-        }
-
-
-        if (
-            showSearchButton
-        ) {
-            showSearchButton
-                .addEventListener(
-                    "click",
-                    () => {
-                        showPage("search");
-                    }
-                );
-        }
-        
-        const articleNameInput =
-            byId(
-                "article-name"
+        byId(
+            "show-publish-page"
+        )
+            ?.addEventListener(
+                "click",
+                () => {
+                    showPage(
+                        "publish"
+                    );
+                }
             );
 
 
-        const checkNameButton =
-            byId(
-                "check-name-button"
+        byId(
+            "show-search-page"
+        )
+            ?.addEventListener(
+                "click",
+                () => {
+                    showPage(
+                        "search"
+                    );
+                }
+            );
+
+
+        byId(
+            "article-name"
+        )
+            ?.addEventListener(
+                "input",
+
+                resetArticleNameVerification
+            );
+
+
+        byId(
+            "check-name-button"
+        )
+            ?.addEventListener(
+                "click",
+
+                handleCheckArticleName
             );
 
 
@@ -2009,15 +2566,66 @@ document.addEventListener(
             );
 
 
-        const ciphertextInput =
-            byId(
-                "ciphertext"
+        if (
+            useSuggestionButton
+        ) {
+
+            useSuggestionButton.hidden =
+                true;
+
+
+            useSuggestionButton
+                .addEventListener(
+                    "click",
+
+                    handleUseSuggestedName
+                );
+        }
+
+
+        byId(
+            "ciphertext"
+        )
+            ?.addEventListener(
+                "input",
+
+                resetCiphertextVerification
             );
 
 
-        const storageHoursInput =
-            byId(
-                "storage-hours"
+        byId(
+            "check-ciphertext-button"
+        )
+            ?.addEventListener(
+                "click",
+
+                handleCheckCiphertext
+            );
+
+
+        byId(
+            "clear-ciphertext-button"
+        )
+            ?.addEventListener(
+                "click",
+
+                handleClearCiphertext
+            );
+
+
+        byId(
+            "storage-hours"
+        )
+            ?.addEventListener(
+                "input",
+                () => {
+
+                    resetPayment();
+
+                    updateQuote();
+
+                    updateSendButton();
+                }
             );
 
 
@@ -2027,15 +2635,40 @@ document.addEventListener(
             );
 
 
-        const publishForm =
-            byId(
-                "publish-form"
+        if (
+            payButton
+        ) {
+
+            payButton.disabled =
+                true;
+
+
+            payButton
+                .addEventListener(
+                    "click",
+
+                    handleFakePayment
+                );
+        }
+
+
+        byId(
+            "publish-form"
+        )
+            ?.addEventListener(
+                "submit",
+
+                handleSend
             );
 
 
-        const searchForm =
-            byId(
-                "search-form"
+        byId(
+            "search-form"
+        )
+            ?.addEventListener(
+                "submit",
+
+                handleSearch
             );
 
 
@@ -2045,147 +2678,10 @@ document.addEventListener(
             );
 
 
-        const copyCiphertextButton =
-            byId(
-                "copy-ciphertext"
-            );
-
-
-        /*
-         * Article Name
-         */
-
-        if (
-            articleNameInput
-        ) {
-            articleNameInput
-                .addEventListener(
-                    "input",
-                    resetArticleNameVerification
-                );
-        }
-
-
-        if (
-            checkNameButton
-        ) {
-            checkNameButton
-                .addEventListener(
-                    "click",
-                    handleCheckArticleName
-                );
-        }
-
-
-        if (
-            useSuggestionButton
-        ) {
-            useSuggestionButton.hidden =
-                true;
-
-
-            useSuggestionButton
-                .addEventListener(
-                    "click",
-                    handleUseSuggestedName
-                );
-        }
-
-
-        /*
-         * Ciphertext
-         */
-
-        if (
-            ciphertextInput
-        ) {
-            ciphertextInput
-                .addEventListener(
-                    "input",
-                    () => {
-                        resetPayment();
-
-                        updateQuote();
-                    }
-                );
-        }
-
-
-        /*
-         * Storage Hours
-         */
-
-        if (
-            storageHoursInput
-        ) {
-            storageHoursInput
-                .addEventListener(
-                    "input",
-                    () => {
-                        resetPayment();
-
-                        updateQuote();
-                    }
-                );
-        }
-
-
-        /*
-         * Fake Payment
-         */
-
-        if (
-            payButton
-        ) {
-            payButton.disabled =
-                true;
-
-
-            payButton
-                .addEventListener(
-                    "click",
-                    handleFakePayment
-                );
-        }
-
-
-        /*
-         * Publish Form
-         */
-
-        if (
-            publishForm
-        ) {
-            publishForm
-                .addEventListener(
-                    "submit",
-                    handleSend
-                );
-        }
-
-
-        /*
-         * Search Form
-         */
-
-        if (
-            searchForm
-        ) {
-            searchForm
-                .addEventListener(
-                    "submit",
-                    handleSearch
-                );
-        }
-
-
-        /*
-         * Copy Published Article Name
-         */
-
         if (
             copyNameButton
         ) {
+
             copyNameButton.disabled =
                 true;
 
@@ -2193,7 +2689,9 @@ document.addEventListener(
             copyNameButton
                 .addEventListener(
                     "click",
+
                     async () => {
+
                         await copyText(
                             copyNameButton
                                 .dataset
@@ -2206,13 +2704,16 @@ document.addEventListener(
         }
 
 
-        /*
-         * Copy Retrieved Ciphertext
-         */
+        const copyCiphertextButton =
+            byId(
+                "copy-ciphertext"
+            );
+
 
         if (
             copyCiphertextButton
         ) {
+
             copyCiphertextButton.disabled =
                 true;
 
@@ -2220,7 +2721,9 @@ document.addEventListener(
             copyCiphertextButton
                 .addEventListener(
                     "click",
+
                     async () => {
+
                         await copyText(
                             copyCiphertextButton
                                 .dataset
@@ -2232,6 +2735,14 @@ document.addEventListener(
                 );
         }
 
+
+        updateArticleNameCount();
+
+        showPage(
+            "publish"
+        );
+
+        clearQuote();
 
         updateQuote();
 

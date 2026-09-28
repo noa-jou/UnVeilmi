@@ -2,52 +2,33 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 
     <title>UnVeilmi</title>
 
-    <link
-        rel="stylesheet"
-        href="style.css"
-    >
+    <link rel="stylesheet" href="style.css?v=2">
 </head>
 
 <body>
-
     <header>
         <h1>UnVeilmi</h1>
-
-        <p>
-            Temporary ciphertext sharing for Veilmi.
-        </p>
+        <p>Temporary ciphertext sharing for Veilmi.</p>
 
         <nav aria-label="Main navigation">
-            <button
-                id="show-publish-page"
-                type="button"
-            >
+            <button id="show-publish-page" type="button" aria-current="page">
                 Publish
             </button>
 
-            <button
-                id="show-search-page"
-                type="button"
-            >
+            <button id="show-search-page" type="button" aria-current="false">
                 Find
             </button>
         </nav>
     </header>
 
-
     <main>
 
-        <!-- =====================================
-             PAGE 1: PUBLISH
-        ====================================== -->
+        <!-- PAGE 1: PUBLISH -->
 
         <section id="publish-page">
 
@@ -58,12 +39,16 @@
                 and share its Article Name.
             </p>
 
-
             <form id="publish-form">
 
-                <!-- Article Name -->
+                <!-- 1. Article Name -->
 
-                <div>
+                <section aria-labelledby="article-name-title">
+
+                    <h3 id="article-name-title">
+                        1. Article Name
+                    </h3>
+
                     <label for="article-name">
                         Article Name
                     </label>
@@ -72,14 +57,17 @@
                         id="article-name"
                         name="article-name"
                         type="text"
-                        maxlength="50"
                         autocomplete="off"
                         required
                     >
 
-                    <small>
-                        Maximum 50 characters.
+                    <small id="article-name-count">
+                        0 / 50 characters
                     </small>
+
+                    <p>
+                        Maximum: 50 characters.
+                    </p>
 
                     <button
                         id="check-name-button"
@@ -105,34 +93,65 @@
                     >
                         Use Suggested Name
                     </button>
-                </div>
+
+                </section>
 
 
-                <!-- Veilmi Ciphertext -->
+                <!-- 2. Veilmi Ciphertext -->
 
-                <div>
-                    <label for="ciphertext">
-                        Veilmi Ciphertext
-                    </label>
+                <section aria-labelledby="ciphertext-title">
+
+                    <h3 id="ciphertext-title">
+                        2. Veilmi Ciphertext
+                    </h3>
+
+                    <div>
+                        <label for="ciphertext">
+                            Ciphertext
+                        </label>
+
+                        <button
+                            id="clear-ciphertext-button"
+                            type="button"
+                            aria-label="Clear ciphertext"
+                            title="Clear ciphertext"
+                        >
+                            ×
+                        </button>
+                    </div>
 
                     <textarea
                         id="ciphertext"
                         name="ciphertext"
                         rows="10"
                         placeholder="VEILMI1:..."
+                        spellcheck="false"
                         required
                     ></textarea>
+
+                    <button
+                        id="check-ciphertext-button"
+                        type="button"
+                    >
+                        Check Ciphertext
+                    </button>
 
                     <p
                         id="ciphertext-status"
                         aria-live="polite"
                     ></p>
-                </div>
+
+                </section>
 
 
-                <!-- Storage Duration -->
+                <!-- 3. Storage Duration -->
 
-                <div>
+                <section aria-labelledby="storage-title">
+
+                    <h3 id="storage-title">
+                        3. Storage Duration
+                    </h3>
+
                     <label for="storage-hours">
                         Storage Duration
                     </label>
@@ -143,6 +162,7 @@
                         type="number"
                         value="24"
                         min="1"
+                        max="8760"
                         step="1"
                         required
                     >
@@ -150,16 +170,41 @@
                     <span>
                         hours
                     </span>
-                </div>
+
+                    <p>
+                        Minimum: 1 hour.<br>
+                        Maximum: 8760 hours (365 days).
+                    </p>
+
+                    <p
+                        id="storage-status"
+                        aria-live="polite"
+                    ></p>
+
+                </section>
 
 
-                <!-- Quote -->
+                <!-- 4. Storage Quote -->
 
                 <section aria-labelledby="quote-title">
 
                     <h3 id="quote-title">
-                        Storage Quote
+                        4. Storage Quote
                     </h3>
+
+                    <p>
+                        <strong>
+                            USD 1 per KB-day
+                        </strong>
+                    </p>
+
+                    <p>
+                        1 KB-day = 1024 bytes stored for 24 hours.
+                    </p>
+
+                    <p>
+                        Free tier: up to 1 KB stored for up to 24 hours.
+                    </p>
 
                     <p>
                         Ciphertext size:
@@ -176,7 +221,14 @@
                     </p>
 
                     <p>
-                        Price:
+                        Calculation:
+                        <strong id="quote-calculation">
+                            —
+                        </strong>
+                    </p>
+
+                    <p>
+                        Total:
                         <strong id="quote-price">
                             —
                         </strong>
@@ -185,17 +237,18 @@
                 </section>
 
 
-                <!-- Fake Payment -->
+                <!-- 5. Payment -->
 
                 <section aria-labelledby="payment-title">
 
                     <h3 id="payment-title">
-                        Payment
+                        5. Payment
                     </h3>
 
                     <p>
-                        This project uses a simulated
-                        payment for demonstration only.
+                        This project uses a simulated payment
+                        for demonstration only.
+                        No real payment is processed.
                     </p>
 
                     <button
@@ -214,27 +267,46 @@
                 </section>
 
 
-                <!-- Send -->
+                <!-- 6. Send -->
 
-                <button
-                    id="send-button"
-                    type="submit"
-                    disabled
-                >
-                    Send
-                </button>
+                <section aria-labelledby="send-title">
 
-                <p
-                    id="publish-status"
-                    aria-live="polite"
-                ></p>
+                    <h3 id="send-title">
+                        6. Send
+                    </h3>
+
+                    <p>
+                        Send becomes available only after the
+                        Article Name, ciphertext, storage quote,
+                        and payment or free-storage confirmation
+                        are valid.
+                    </p>
+
+                    <button
+                        id="send-button"
+                        type="submit"
+                        disabled
+                    >
+                        Send
+                    </button>
+
+                    <p
+                        id="publish-status"
+                        aria-live="polite"
+                    ></p>
+
+                </section>
 
             </form>
 
 
             <!-- Successful Result -->
 
-            <section aria-labelledby="published-title">
+            <section
+                id="published-result"
+                aria-labelledby="published-title"
+                hidden
+            >
 
                 <h3 id="published-title">
                     Published Article Name
@@ -255,40 +327,39 @@
         </section>
 
 
-        <!-- =====================================
-             PAGE 2: FIND
-        ====================================== -->
+        <!-- PAGE 2: FIND -->
 
         <section
             id="search-page"
             hidden
         >
 
-            <h2>Find Ciphertext</h2>
+            <h2>
+                Find Ciphertext
+            </h2>
 
             <p>
                 Enter an Article Name to retrieve
                 its temporary ciphertext.
             </p>
 
-
             <form id="search-form">
 
-                <div>
-                    <label for="search-article-name">
-                        Article Name
-                    </label>
+                <label for="search-article-name">
+                    Article Name
+                </label>
 
-                    <input
-                        id="search-article-name"
-                        name="search-article-name"
-                        type="text"
-                        maxlength="50"
-                        autocomplete="off"
-                        required
-                    >
-                </div>
+                <input
+                    id="search-article-name"
+                    name="search-article-name"
+                    type="text"
+                    autocomplete="off"
+                    required
+                >
 
+                <p>
+                    Maximum: 50 characters.
+                </p>
 
                 <button type="submit">
                     Find
@@ -296,22 +367,22 @@
 
             </form>
 
-
             <p
                 id="search-status"
                 aria-live="polite"
             ></p>
 
-
-            <section aria-labelledby="result-title">
+            <section
+                id="search-result"
+                aria-labelledby="result-title"
+                hidden
+            >
 
                 <h3 id="result-title">
                     Ciphertext
                 </h3>
 
-                <pre
-                    id="retrieved-ciphertext"
-                ></pre>
+                <pre id="retrieved-ciphertext"></pre>
 
                 <button
                     id="copy-ciphertext"
@@ -336,7 +407,12 @@
     </footer>
 
 
-    <script src="app.js"></script>
+    <!--
+        The version query helps prevent Chrome from using
+        an older cached copy of app.js during development.
+        Increase the number after future major JS updates.
+    -->
+    <script src="app.js?v=3"></script>
 
 </body>
 </html>

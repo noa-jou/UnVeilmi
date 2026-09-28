@@ -1,5 +1,6 @@
 from pathlib import Path
 import sqlite3
+import math
 
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, HTTPException, Query
@@ -25,10 +26,39 @@ app.add_middleware(
 DB_PATH = Path(__file__).with_name("unveilmi.db")
 
 
+BYTES_PER_KB = 1024
+HOURS_PER_DAY = 24
+USD_PER_KB_DAY = 1
+
+def calculate_expected_price(
+    ciphertext: str,
+    storage_hours: int,
+) -> int:
+    ciphertext_size = len(
+        ciphertext.encode("utf-8")
+    )
+
+    # Free tier:
+    # up to 1 KB stored for up to 24 hours.
+    if (
+        ciphertext_size <= BYTES_PER_KB
+        and storage_hours <= HOURS_PER_DAY
+    ):
+        return 0
+
+    raw_price = (
+        (ciphertext_size / BYTES_PER_KB)
+        * (storage_hours / HOURS_PER_DAY)
+        * USD_PER_KB_DAY
+    )
+
+    return math.ceil(raw_price)
+
+
 class PostCreate(BaseModel):
     article_name: str = Field(min_length=1, max_length=50)
     ciphertext: str = Field(min_length=1)
-    storage_hours: int = Field(gt=0)
+    storage_hours: int = Field( gt=1,le=8760,)
     price: int = Field(ge=0)
 
 
@@ -127,8 +157,10 @@ def create_post(post: PostCreate):
     """
     Create a new temporary ciphertext post.
 
-    Before storage, the ciphertext must pass strict Veilmi
-    message-envelope validation.
+    Before storage, the backend verifies:
+    - the ciphertext is a valid Veilmi message envelope;
+    - the submitted price matches the backend pricing formula;
+    - expired posts are cleaned up.
 
     The database trigger generates:
     - ciphertext_size
@@ -138,16 +170,46 @@ def create_post(post: PostCreate):
     The UNIQUE constraint on article_name remains the final protection
     against duplicate active Article Names.
     """
+
+    # 1. Validate Veilmi ciphertext.
     try:
-        validate_veilmi_message(post.ciphertext)
+        validate_veilmi_message(
+            post.ciphertext
+        )
     except VeilmiValidationError as exc:
         raise HTTPException(
             status_code=422,
-            detail=f"Invalid Veilmi ciphertext: {exc}",
+            detail=(
+                f"Invalid Veilmi ciphertext: {exc}"
+            ),
         ) from exc
 
+
+    # 2. Recalculate the price on the backend.
+    expected_price = (
+        calculate_expected_price(
+            post.ciphertext,
+            post.storage_hours,
+        )
+    )
+
+
+    # 3. Reject an incorrect price.
+    if post.price != expected_price:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "Incorrect storage price. "
+                f"Expected USD {expected_price}."
+            ),
+        )
+
+
+    # 4. Remove expired posts before INSERT.
     cleanup_expired_posts()
 
+
+    # 5. Store the post.
     try:
         with get_connection() as conn:
             cursor = conn.execute(
@@ -164,12 +226,17 @@ def create_post(post: PostCreate):
                     post.article_name,
                     post.ciphertext,
                     post.storage_hours,
-                    post.price,
+
+                    # Use the backend-calculated price,
+                    # not the client value.
+                    expected_price,
                 ),
             )
 
             post_id = cursor.lastrowid
+
             conn.commit()
+
 
             row = conn.execute(
                 """
@@ -187,16 +254,25 @@ def create_post(post: PostCreate):
                 (post_id,),
             ).fetchone()
 
+
     except sqlite3.IntegrityError as exc:
-        if "UNIQUE constraint failed: posts.article_name" in str(exc):
+        if (
+            "UNIQUE constraint failed: posts.article_name"
+            in str(exc)
+        ):
             raise HTTPException(
                 status_code=409,
-                detail="This Article Name is already in use.",
+                detail=(
+                    "This Article Name is already in use."
+                ),
             ) from exc
 
         raise HTTPException(
             status_code=400,
-            detail="The post could not be created.",
+            detail=(
+                "The post could not be created."
+            ),
         ) from exc
+
 
     return dict(row)
