@@ -1,6 +1,7 @@
 from pathlib import Path
 import sqlite3
 
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel, Field
 
@@ -11,7 +12,16 @@ from veilmi_validator import (
 
 
 app = FastAPI(title="UnVeilmi API")
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://127.0.0.1:5500",
+        "http://localhost:5500",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 DB_PATH = Path(__file__).with_name("unveilmi.db")
 
 
@@ -135,6 +145,8 @@ def create_post(post: PostCreate):
             status_code=422,
             detail=f"Invalid Veilmi ciphertext: {exc}",
         ) from exc
+
+    cleanup_expired_posts()
 
     try:
         with get_connection() as conn:
