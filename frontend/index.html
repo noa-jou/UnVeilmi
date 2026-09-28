@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>UnVeilmi</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+</head>
+
+<body>
+
+    <header>
+        <h1>UnVeilmi</h1>
+
+        <p>
+            Temporary ciphertext sharing for Veilmi.
+        </p>
+
+        <nav aria-label="Main navigation">
+            <button
+                id="show-publish-page"
+                type="button"
+            >
+                Publish
+            </button>
+
+            <button
+                id="show-search-page"
+                type="button"
+            >
+                Find
+            </button>
+        </nav>
+    </header>
+
+
+    <main>
+
+        <!-- =====================================
+             PAGE 1: PUBLISH
+        ====================================== -->
+
+        <section id="publish-page">
+
+            <h2>Publish Ciphertext</h2>
+
+            <p>
+                Store a Veilmi ciphertext temporarily
+                and share its Article Name.
+            </p>
+
+
+            <form id="publish-form">
+
+                <!-- Article Name -->
+
+                <div>
+                    <label for="article-name">
+                        Article Name
+                    </label>
+
+                    <input
+                        id="article-name"
+                        name="article-name"
+                        type="text"
+                        maxlength="50"
+                        autocomplete="off"
+                        required
+                    >
+
+                    <small>
+                        Maximum 50 characters.
+                    </small>
+
+                    <button
+                        id="check-name-button"
+                        type="button"
+                    >
+                        Check Name
+                    </button>
+
+                    <p
+                        id="article-name-status"
+                        aria-live="polite"
+                    ></p>
+
+                    <p
+                        id="article-name-suggestion"
+                        aria-live="polite"
+                    ></p>
+
+                    <button
+                        id="use-suggested-name"
+                        type="button"
+                        hidden
+                    >
+                        Use Suggested Name
+                    </button>
+                </div>
+
+
+                <!-- Veilmi Ciphertext -->
+
+                <div>
+                    <label for="ciphertext">
+                        Veilmi Ciphertext
+                    </label>
+
+                    <textarea
+                        id="ciphertext"
+                        name="ciphertext"
+                        rows="10"
+                        placeholder="VEILMI1:..."
+                        required
+                    ></textarea>
+
+                    <p
+                        id="ciphertext-status"
+                        aria-live="polite"
+                    ></p>
+                </div>
+
+
+                <!-- Storage Duration -->
+
+                <div>
+                    <label for="storage-hours">
+                        Storage Duration
+                    </label>
+
+                    <input
+                        id="storage-hours"
+                        name="storage-hours"
+                        type="number"
+                        value="24"
+                        min="1"
+                        step="1"
+                        required
+                    >
+
+                    <span>
+                        hours
+                    </span>
+                </div>
+
+
+                <!-- Quote -->
+
+                <section aria-labelledby="quote-title">
+
+                    <h3 id="quote-title">
+                        Storage Quote
+                    </h3>
+
+                    <p>
+                        Ciphertext size:
+                        <strong id="quote-size">
+                            —
+                        </strong>
+                    </p>
+
+                    <p>
+                        Storage duration:
+                        <strong id="quote-hours">
+                            —
+                        </strong>
+                    </p>
+
+                    <p>
+                        Price:
+                        <strong id="quote-price">
+                            —
+                        </strong>
+                    </p>
+
+                </section>
+
+
+                <!-- Fake Payment -->
+
+                <section aria-labelledby="payment-title">
+
+                    <h3 id="payment-title">
+                        Payment
+                    </h3>
+
+                    <p>
+                        This project uses a simulated
+                        payment for demonstration only.
+                    </p>
+
+                    <button
+                        id="pay-button"
+                        type="button"
+                        disabled
+                    >
+                        Pay
+                    </button>
+
+                    <p
+                        id="payment-status"
+                        aria-live="polite"
+                    ></p>
+
+                </section>
+
+
+                <!-- Send -->
+
+                <button
+                    id="send-button"
+                    type="submit"
+                    disabled
+                >
+                    Send
+                </button>
+
+                <p
+                    id="publish-status"
+                    aria-live="polite"
+                ></p>
+
+            </form>
+
+
+            <!-- Successful Result -->
+
+            <section aria-labelledby="published-title">
+
+                <h3 id="published-title">
+                    Published Article Name
+                </h3>
+
+                <p id="published-article-name"></p>
+
+                <button
+                    id="copy-article-name"
+                    type="button"
+                    disabled
+                >
+                    Copy Article Name
+                </button>
+
+            </section>
+
+        </section>
+
+
+        <!-- =====================================
+             PAGE 2: FIND
+        ====================================== -->
+
+        <section
+            id="search-page"
+            hidden
+        >
+
+            <h2>Find Ciphertext</h2>
+
+            <p>
+                Enter an Article Name to retrieve
+                its temporary ciphertext.
+            </p>
+
+
+            <form id="search-form">
+
+                <div>
+                    <label for="search-article-name">
+                        Article Name
+                    </label>
+
+                    <input
+                        id="search-article-name"
+                        name="search-article-name"
+                        type="text"
+                        maxlength="50"
+                        autocomplete="off"
+                        required
+                    >
+                </div>
+
+
+                <button type="submit">
+                    Find
+                </button>
+
+            </form>
+
+
+            <p
+                id="search-status"
+                aria-live="polite"
+            ></p>
+
+
+            <section aria-labelledby="result-title">
+
+                <h3 id="result-title">
+                    Ciphertext
+                </h3>
+
+                <pre
+                    id="retrieved-ciphertext"
+                ></pre>
+
+                <button
+                    id="copy-ciphertext"
+                    type="button"
+                    disabled
+                >
+                    Copy Ciphertext
+                </button>
+
+            </section>
+
+        </section>
+
+    </main>
+
+
+    <footer>
+        <p>
+            UnVeilmi stores ciphertext only.
+            Encryption and decryption remain with Veilmi.
+        </p>
+    </footer>
+
+
+    <script src="app.js"></script>
+
+</body>
+</html>
