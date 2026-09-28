@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,12 +8,26 @@
 
     <title>UnVeilmi</title>
 
-    <link rel="stylesheet" href="style.css?v=2">
+    <!--
+        The version query helps prevent Chrome from using
+        an older cached copy of style.css during development.
+        Increase the number after future major JS updates.
+
+        normally we should:
+        <link rel="stylesheet" href="style.css">
+    -->
+
+    <script>
+        const style = document.createElement("link");
+        style.rel = "stylesheet";
+        style.href = `style.css?v=${Date.now()}`;
+        document.head.appendChild(style);
+    </script>
 </head>
 
 <body>
     <header>
-        <h1>UnVeilmi</h1>
+        <h1><span class="brand-un">Un</span>Veilmi</h1>
         <p>Temporary ciphertext sharing for Veilmi.</p>
 
         <nav aria-label="Main navigation">
@@ -53,13 +68,7 @@
                         Article Name
                     </label>
 
-                    <input
-                        id="article-name"
-                        name="article-name"
-                        type="text"
-                        autocomplete="off"
-                        required
-                    >
+                    <input id="article-name" name="article-name" type="text" autocomplete="off" required>
 
                     <small id="article-name-count">
                         0 / 50 characters
@@ -69,28 +78,15 @@
                         Maximum: 50 characters.
                     </p>
 
-                    <button
-                        id="check-name-button"
-                        type="button"
-                    >
+                    <button id="check-name-button" type="button">
                         Check Name
                     </button>
 
-                    <p
-                        id="article-name-status"
-                        aria-live="polite"
-                    ></p>
+                    <p id="article-name-status" aria-live="polite"></p>
 
-                    <p
-                        id="article-name-suggestion"
-                        aria-live="polite"
-                    ></p>
+                    <p id="article-name-suggestion" aria-live="polite"></p>
 
-                    <button
-                        id="use-suggested-name"
-                        type="button"
-                        hidden
-                    >
+                    <button id="use-suggested-name" type="button" hidden>
                         Use Suggested Name
                     </button>
 
@@ -110,36 +106,20 @@
                             Ciphertext
                         </label>
 
-                        <button
-                            id="clear-ciphertext-button"
-                            type="button"
-                            aria-label="Clear ciphertext"
-                            title="Clear ciphertext"
-                        >
+                        <button id="clear-ciphertext-button" type="button" aria-label="Clear ciphertext"
+                            title="Clear ciphertext">
                             ×
                         </button>
                     </div>
 
-                    <textarea
-                        id="ciphertext"
-                        name="ciphertext"
-                        rows="10"
-                        placeholder="VEILMI1:..."
-                        spellcheck="false"
-                        required
-                    ></textarea>
+                    <textarea id="ciphertext" name="ciphertext" rows="10" placeholder="VEILMI1:..." spellcheck="false"
+                        required></textarea>
 
-                    <button
-                        id="check-ciphertext-button"
-                        type="button"
-                    >
+                    <button id="check-ciphertext-button" type="button">
                         Check Ciphertext
                     </button>
 
-                    <p
-                        id="ciphertext-status"
-                        aria-live="polite"
-                    ></p>
+                    <p id="ciphertext-status" aria-live="polite"></p>
 
                 </section>
 
@@ -156,16 +136,8 @@
                         Storage Duration
                     </label>
 
-                    <input
-                        id="storage-hours"
-                        name="storage-hours"
-                        type="number"
-                        value="24"
-                        min="1"
-                        max="8760"
-                        step="1"
-                        required
-                    >
+                    <input id="storage-hours" name="storage-hours" type="number" value="24" min="1" max="8760" step="1"
+                        required>
 
                     <span>
                         hours
@@ -176,10 +148,7 @@
                         Maximum: 8760 hours (365 days).
                     </p>
 
-                    <p
-                        id="storage-status"
-                        aria-live="polite"
-                    ></p>
+                    <p id="storage-status" aria-live="polite"></p>
 
                 </section>
 
@@ -251,18 +220,11 @@
                         No real payment is processed.
                     </p>
 
-                    <button
-                        id="pay-button"
-                        type="button"
-                        disabled
-                    >
+                    <button id="pay-button" type="button" disabled>
                         Pay
                     </button>
 
-                    <p
-                        id="payment-status"
-                        aria-live="polite"
-                    ></p>
+                    <p id="payment-status" aria-live="polite"></p>
 
                 </section>
 
@@ -282,18 +244,11 @@
                         are valid.
                     </p>
 
-                    <button
-                        id="send-button"
-                        type="submit"
-                        disabled
-                    >
+                    <button id="send-button" type="submit" disabled>
                         Send
                     </button>
 
-                    <p
-                        id="publish-status"
-                        aria-live="polite"
-                    ></p>
+                    <p id="publish-status" aria-live="polite"></p>
 
                 </section>
 
@@ -302,23 +257,15 @@
 
             <!-- Successful Result -->
 
-            <section
-                id="published-result"
-                aria-labelledby="published-title"
-                hidden
-            >
+            <section id="published-result" aria-labelledby="published-title" hidden>
 
                 <h3 id="published-title">
-                    Published Article Name
+                    Last Published Article Name
                 </h3>
 
                 <p id="published-article-name"></p>
 
-                <button
-                    id="copy-article-name"
-                    type="button"
-                    disabled
-                >
+                <button id="copy-article-name" type="button" disabled>
                     Copy Article Name
                 </button>
 
@@ -329,10 +276,7 @@
 
         <!-- PAGE 2: FIND -->
 
-        <section
-            id="search-page"
-            hidden
-        >
+        <section id="search-page" hidden>
 
             <h2>
                 Find Ciphertext
@@ -349,48 +293,36 @@
                     Article Name
                 </label>
 
-                <input
-                    id="search-article-name"
-                    name="search-article-name"
-                    type="text"
-                    autocomplete="off"
-                    required
-                >
+                <input id="search-article-name" name="search-article-name" type="text" autocomplete="off" maxlength="50"
+                    minlength="1" required>
 
                 <p>
-                    Maximum: 50 characters.
+                    1-50 character(s).
                 </p>
 
-                <button type="submit">
-                    Find
-                </button>
+                <div id="search-actions">
+
+                    <button id="find-button" type="submit">
+                        Find
+                    </button>
+
+                    <button id="copy-ciphertext" type="button" disabled>
+                        Copy Ciphertext
+                    </button>
+
+                </div>
 
             </form>
 
-            <p
-                id="search-status"
-                aria-live="polite"
-            ></p>
+            <p id="search-status" aria-live="polite"></p>
 
-            <section
-                id="search-result"
-                aria-labelledby="result-title"
-                hidden
-            >
+            <section id="search-result" aria-labelledby="result-title" hidden>
 
-                <h3 id="result-title">
+                <h3 id="result-title" class="visually-hidden">
                     Ciphertext
                 </h3>
 
                 <pre id="retrieved-ciphertext"></pre>
-
-                <button
-                    id="copy-ciphertext"
-                    type="button"
-                    disabled
-                >
-                    Copy Ciphertext
-                </button>
 
             </section>
 
@@ -411,8 +343,13 @@
         The version query helps prevent Chrome from using
         an older cached copy of app.js during development.
         Increase the number after future major JS updates.
+
+        normally we should:
+        <script src="app.js"></script>
     -->
-    <script src="app.js?v=3"></script>
+
+    <script src="app.js?v=20260928"></script>
 
 </body>
+
 </html>

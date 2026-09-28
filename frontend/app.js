@@ -759,9 +759,9 @@ function createTypoCandidates(
             copy[i],
             copy[i + 1],
         ] = [
-            copy[i + 1],
-            copy[i],
-        ];
+                copy[i + 1],
+                copy[i],
+            ];
 
 
         const candidate =
@@ -808,9 +808,9 @@ function createTypoCandidates(
             candidates[i],
             candidates[j],
         ] = [
-            candidates[j],
-            candidates[i],
-        ];
+                candidates[j],
+                candidates[i],
+            ];
     }
 
 
@@ -1922,6 +1922,192 @@ function updateSendButton() {
         );
 }
 
+/* -------------------------------------------------
+   Reset Publish Form After Success
+------------------------------------------------- */
+
+function resetPublishFormAfterSuccess() {
+
+    /*
+     * Clear the completed post inputs.
+     */
+
+    const articleNameInput =
+        byId(
+            "article-name"
+        );
+
+
+    const ciphertextInput =
+        byId(
+            "ciphertext"
+        );
+
+
+    const storageHoursInput =
+        byId(
+            "storage-hours"
+        );
+
+
+    if (
+        articleNameInput
+    ) {
+        articleNameInput.value =
+            "";
+    }
+
+
+    if (
+        ciphertextInput
+    ) {
+        ciphertextInput.value =
+            "";
+    }
+
+
+    /*
+     * Return storage duration to its default value.
+     */
+
+    if (
+        storageHoursInput
+    ) {
+        storageHoursInput.value =
+            "24";
+    }
+
+
+    /*
+     * Clear all validation states.
+     */
+
+    publishState
+        .verifiedArticleName =
+        null;
+
+
+    publishState
+        .verifiedCiphertext =
+        null;
+
+
+    publishState
+        .paymentCompleted =
+        false;
+
+
+    publishState
+        .paymentFingerprint =
+        null;
+
+
+    /*
+     * Clear validation messages.
+     */
+
+    setText(
+        byId(
+            "article-name-status"
+        ),
+        ""
+    );
+
+
+    setText(
+        byId(
+            "article-name-suggestion"
+        ),
+        ""
+    );
+
+
+    setText(
+        byId(
+            "ciphertext-status"
+        ),
+        ""
+    );
+
+
+    setText(
+        byId(
+            "storage-status"
+        ),
+        ""
+    );
+
+
+    setText(
+        byId(
+            "payment-status"
+        ),
+        ""
+    );
+
+
+    setText(
+        byId(
+            "publish-status"
+        ),
+        ""
+    );
+
+
+    /*
+     * Hide any old Article Name suggestion.
+     */
+
+    const suggestionButton =
+        byId(
+            "use-suggested-name"
+        );
+
+
+    if (
+        suggestionButton
+    ) {
+        suggestionButton.hidden =
+            true;
+
+
+        delete (
+            suggestionButton
+                .dataset
+                .suggestion
+        );
+    }
+
+
+    /*
+     * Reset quote and buttons.
+     */
+
+    clearQuote();
+
+
+    const sendButton =
+        byId(
+            "send-button"
+        );
+
+
+    if (
+        sendButton
+    ) {
+        sendButton.disabled =
+            true;
+    }
+
+
+    /*
+     * Reset Article Name counter.
+     */
+
+    updateArticleNameCount();
+}
+
+
 
 async function handleSend(
     event
@@ -2159,12 +2345,9 @@ async function handleSend(
             });
 
 
-        setText(
-            publishStatus,
-
-            "Published successfully. ✓"
-        );
-
+        /*
+         * Show the successful result first.
+         */
 
         setText(
             byId(
@@ -2198,7 +2381,6 @@ async function handleSend(
         if (
             copyNameButton
         ) {
-
             copyNameButton.disabled =
                 false;
 
@@ -2210,27 +2392,15 @@ async function handleSend(
         }
 
 
-        publishState
-            .verifiedArticleName =
-            null;
+        /*
+         * Clear the completed Publish form.
+         *
+         * The Published Article Name above is intentionally
+         * NOT cleared, so the user can still copy and share it.
+         */
 
+        resetPublishFormAfterSuccess();
 
-        publishState
-            .verifiedCiphertext =
-            null;
-
-
-        publishState
-            .paymentCompleted =
-            false;
-
-
-        publishState
-            .paymentFingerprint =
-            null;
-
-
-        updateSendButton();
 
     } catch (error) {
 
@@ -2262,6 +2432,111 @@ async function handleSend(
 
         updateSendButton();
     }
+}
+
+
+/* -------------------------------------------------
+   Clear Find Result After Copy
+------------------------------------------------- */
+
+function clearSearchResultAfterCopy() {
+
+    const articleNameInput =
+        byId(
+            "search-article-name"
+        );
+
+
+    const retrievedCiphertext =
+        byId(
+            "retrieved-ciphertext"
+        );
+
+
+    const resultSection =
+        byId(
+            "search-result"
+        );
+
+
+    const copyButton =
+        byId(
+            "copy-ciphertext"
+        );
+
+
+    /*
+     * Clear the Article Name.
+     */
+
+    if (
+        articleNameInput
+    ) {
+        articleNameInput.value =
+            "";
+    }
+
+
+    /*
+     * Remove the ciphertext from the page.
+     */
+
+    setText(
+        retrievedCiphertext,
+        ""
+    );
+
+
+    /*
+     * Hide the result.
+     */
+
+    if (
+        resultSection
+    ) {
+        resultSection.hidden =
+            true;
+    }
+
+
+    /*
+     * Disable Copy Ciphertext again.
+     */
+
+    if (
+        copyButton
+    ) {
+
+        copyButton.disabled =
+            true;
+
+
+        delete (
+            copyButton
+                .dataset
+                .copyValue
+        );
+    }
+
+
+    /*
+     * Clear the old Find status message.
+     */
+
+    setText(
+        byId(
+            "search-status"
+        ),
+        ""
+    );
+
+
+    /*
+     * Return focus to Article Name.
+     */
+
+    articleNameInput
+        ?.focus();
 }
 
 
@@ -2704,7 +2979,7 @@ document.addEventListener(
         }
 
 
-        const copyCiphertextButton =
+                const copyCiphertextButton =
             byId(
                 "copy-ciphertext"
             );
@@ -2713,6 +2988,11 @@ document.addEventListener(
         if (
             copyCiphertextButton
         ) {
+
+            /*
+             * Copy starts disabled.
+             * It becomes enabled only after Find succeeds.
+             */
 
             copyCiphertextButton.disabled =
                 true;
@@ -2724,13 +3004,53 @@ document.addEventListener(
 
                     async () => {
 
-                        await copyText(
+                        const ciphertext =
                             copyCiphertextButton
                                 .dataset
-                                .copyValue,
+                                .copyValue;
 
-                            copyCiphertextButton
-                        );
+
+                        if (
+                            !ciphertext
+                        ) {
+                            return;
+                        }
+
+
+                        try {
+
+                            /*
+                             * Copy the ciphertext first.
+                             */
+
+                            await navigator.clipboard
+                                .writeText(
+                                    ciphertext
+                                );
+
+
+                            /*
+                             * After a successful copy:
+                             *
+                             * - clear Article Name
+                             * - clear ciphertext
+                             * - hide the result
+                             * - disable Copy Ciphertext
+                             */
+
+                            clearSearchResultAfterCopy();
+
+
+                        } catch (error) {
+
+                            setText(
+                                byId(
+                                    "search-status"
+                                ),
+
+                                `Could not copy ciphertext: ${error.message}`
+                            );
+                        }
                     }
                 );
         }
