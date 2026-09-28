@@ -129,3 +129,12 @@ WHERE article_name = 'temporary-database-test';
 ```sql
 .quit
 ```
+
+## 9. If you are interested in what happened next in my demo video
+
+```sql
+sqlite3 unveilmi.db < demo_seed.sql
+```
+And my shared passphrase is: family
+
+You can download my [Veilmi](https://noa-jou.github.io/Veilmi/closed-testing.html) to find out what happened next.
