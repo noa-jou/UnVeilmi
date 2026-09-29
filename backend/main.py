@@ -58,7 +58,7 @@ def calculate_expected_price(
 class PostCreate(BaseModel):
     article_name: str = Field(min_length=1, max_length=50)
     ciphertext: str = Field(min_length=1)
-    storage_hours: int = Field( gt=1,le=8760,)
+    storage_hours: int = Field(ge=1, le=8760)
     price: int = Field(ge=0)
 
 
