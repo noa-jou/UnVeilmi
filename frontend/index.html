@@ -8,21 +8,16 @@
 
     <title>UnVeilmi</title>
 
-    <!--
-        The version query helps prevent Chrome from using
-        an older cached copy of style.css during development.
-        Increase the number after future major JS updates.
-
-        normally we should:
-        <link rel="stylesheet" href="style.css">
+    <!--if testing:
+        <script>
+            const style = document.createElement("link");
+            style.rel = "stylesheet";
+            style.href = `style.css?v=${Date.now()}`;
+            document.head.appendChild(style);
+        </script> 
     -->
+    <link rel="stylesheet" href="style.css">
 
-    <script>
-        const style = document.createElement("link");
-        style.rel = "stylesheet";
-        style.href = `style.css?v=${Date.now()}`;
-        document.head.appendChild(style);
-    </script>
 </head>
 
 <body>
@@ -338,16 +333,11 @@
     </footer>
 
 
-    <!--
-        The version query helps prevent Chrome from using
-        an older cached copy of app.js during development.
-        Increase the number after future major JS updates.
-
-        normally we should:
-        <script src="app.js"></script>
+    <!-- if testing:
+        <script src="app.js?v=20260929"></script> 
     -->
 
-    <script src="app.js?v=2026092"></script>
+    <script src="app.js"></script>
 
 </body>
 

@@ -4,7 +4,7 @@
 
    Visual direction:
    - Indigo: primary UnVeilmi color
-   - Muted teal: secondary / Find color
+   - Muted teal: status / validation feedback
    - Warm gold: Veilmi family accent
    - Pale blue-grey: background
    ========================================================= */
@@ -25,7 +25,6 @@
 
     --teal: #568f8b;
     --teal-dark: #42736f;
-    --teal-soft: #e1efed;
 
     --gold: #d8ae58;
     --gold-soft: #f7edcf;
@@ -245,8 +244,8 @@ main {
 }
 
 
-#publish-page>p,
-#search-page>p {
+#publish-page > p,
+#search-page > p:not(#search-status) {
     margin-top: 0;
     margin-bottom: 30px;
 
@@ -556,9 +555,10 @@ button:disabled {
 #search-status {
     margin: 12px 0 0;
 
-    color: var(--text-muted);
+    color: var(--teal-dark);
 
     font-size: 0.92rem;
+    font-weight: 600;
 }
 
 
@@ -729,13 +729,6 @@ p:has(> strong) {
 
 
 /*
-   Header row above the ciphertext.
-
-   The title stays on the left.
-   Copy Ciphertext stays on the right.
-*/
-
-/*
    Find and Copy actions sit on the same row.
 */
 
@@ -768,30 +761,6 @@ p:has(> strong) {
 #find-button:hover:not(:disabled) {
     background: #cda349;
 }
-
-
-/*
-   Copy stays on the right.
-*/
-
-#copy-ciphertext {
-    margin-left: auto;
-
-    background: var(--indigo);
-    color: white;
-}
-
-
-#copy-ciphertext:hover:not(:disabled) {
-    background: var(--indigo-dark);
-}
-
-
-#copy-ciphertext:disabled {
-    background: #dedee5;
-    color: #9998a2;
-}
-
 
 #retrieved-ciphertext {
     width: 100%;
