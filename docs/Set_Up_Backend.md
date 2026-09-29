@@ -535,6 +535,8 @@ Existing UnVeilmi posts and demo data should remain untouched.
 
 ### Test Results
 
+**Suite ID** — a unique ID created for each test run. It helps the script identify its own temporary test data and remove only those records after testing.
+
 Each test produces either:
 
 ```text
