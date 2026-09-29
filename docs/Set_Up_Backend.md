@@ -252,7 +252,15 @@ If `.venv` still exists and `requirements.txt` has not changed, that is all you 
 
 ---
 
-## 8. Run the Backend Availability and Security Test
+## 8. Run the Backend Tests
+
+For the full availability, validation, database, pricing, and
+security-related test suite, see:
+
+[Testing Guide](Testing.md)
+
+
+## Run the Backend Availability and Security Test
 
 UnVeilmi includes:
 
@@ -555,8 +563,8 @@ A successful run will end with a summary similar to:
 ========================================================================
 UnVeilmi Backend Availability and Security Test Summary
 ========================================================================
-Total:  40
-Passed: 40
+Total:  39
+Passed: 39
 Failed: 0
 
 All checks passed.
@@ -599,8 +607,8 @@ An unsuccessful run will end with a summary similar to:
 ========================================================================
 UnVeilmi Backend Availability and Security Test Summary
 ========================================================================
-Total:  40
-Passed: 39
+Total:  39
+Passed: 38
 Failed: 1
 
 One or more checks failed.

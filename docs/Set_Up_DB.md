@@ -66,9 +66,13 @@ sqlite>
 
 ---
 
-## 5. Insert a Test Post
+## 5. Insert a Database-Only Test Post
 
-Use a temporary Article Name that will not conflict with the demo data:
+This step tests the SQLite database and its trigger directly.
+
+It does **not** send the post through `main.py`, so backend validation such as Veilmi message validation and price recalculation is intentionally bypassed.
+
+Use a temporary Article Name that will not conflict with other data:
 
 ```sql
 INSERT INTO posts (
@@ -81,11 +85,16 @@ VALUES (
     'temporary-database-test',
     'VEILMI1:test-ciphertext',
     1,
-    1
+    0
 );
 ```
 
----
+The ciphertext above is only placeholder text for testing the database.
+
+It is not expected to pass the real UnVeilmi API's Veilmi ciphertext validation.
+
+The purpose of this step is only to confirm that SQLite can insert the record and that the database trigger generates runtime values correctly.
+
 
 ## 6. Check the Result
 
@@ -93,10 +102,12 @@ For easier output:
 
 ```sql
 .headers on
+```
+`.headers on` displays the column names at the top of query results.  
+
+```sql
 .mode column
 ```
-
-`.headers on` displays the column names at the top of query results.  
 `.mode column` formats the output into aligned columns so it is easier to read.
 
 Then run:
@@ -112,6 +123,8 @@ You should see the test record, including automatically generated values such as
 - `expires_at`
 
 If the record appears correctly, the database has been initialized successfully.
+
+This confirms that the database layer is working correctly. Backend API validation is tested separately by `backend_availability_and_security_test.py`.
 
 ---
 

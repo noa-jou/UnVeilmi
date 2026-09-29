@@ -1,0 +1,2682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>UnVeilmi Frontend Availability and Validation Test</title>
+
+    <style>
+        :root {
+            color-scheme: light;
+            font-family:
+                Inter,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                Roboto,
+                Arial,
+                sans-serif;
+        }
+
+        body {
+            max-width: 980px;
+            margin: 40px auto;
+            padding: 0 20px 60px;
+            line-height: 1.55;
+        }
+
+        h1 {
+            margin-bottom: 4px;
+        }
+
+        .muted {
+            color: #666;
+        }
+
+        .panel {
+            margin: 22px 0;
+            padding: 16px 18px;
+            border: 1px solid #d7d7df;
+            border-radius: 10px;
+        }
+
+        #summary {
+            font-weight: 700;
+        }
+
+        #results {
+            padding-left: 0;
+            list-style: none;
+        }
+
+        #results li {
+            margin: 8px 0;
+            padding: 8px 10px;
+            border-radius: 7px;
+            font-family:
+                "SFMono-Regular",
+                Consolas,
+                "Liberation Mono",
+                Menlo,
+                monospace;
+            white-space: pre-wrap;
+        }
+
+        .pass {
+            background: #edf7ef;
+        }
+
+        .fail {
+            background: #fbecee;
+        }
+
+        .group {
+            margin-top: 22px;
+            padding-top: 16px;
+            border-top: 1px solid #ddd;
+            font-weight: 700;
+        }
+
+        button {
+            padding: 9px 16px;
+            cursor: pointer;
+        }
+
+        /*
+         * Load the real UnVeilmi page in the same browser origin.
+         * It stays available to the test script but is visually hidden.
+         */
+        #app-frame {
+            position: fixed;
+            left: -10000px;
+            top: 0;
+            width: 2px;
+            height: 2px;
+            opacity: 0;
+            pointer-events: none;
+            border: 0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>UnVeilmi Frontend Availability and Validation Test</h1>
+
+    <p class="muted">
+        This test uses the real <code>index.html</code> and <code>app.js</code>.
+        No additional testing package is required.
+    </p>
+
+    <div class="panel">
+        <p>
+            Keep both local servers running:
+        </p>
+
+        <pre>Frontend: http://127.0.0.1:5500
+Backend:  http://127.0.0.1:8000</pre>
+
+        <p id="suite-id"></p>
+
+        <button id="run-test" type="button">
+            Run Test Again
+        </button>
+    </div>
+
+    <div id="summary" class="panel" aria-live="polite">
+        Waiting to start...
+    </div>
+
+    <ul id="results"></ul>
+
+    <iframe
+        id="app-frame"
+        src="about:blank"
+        title="UnVeilmi frontend test target"
+    ></iframe>
+
+
+    <script>
+        const BACKEND_URL =
+            "http://127.0.0.1:8000";
+
+        const frame =
+            document.getElementById(
+                "app-frame"
+            );
+
+        const results =
+            document.getElementById(
+                "results"
+            );
+
+        const summary =
+            document.getElementById(
+                "summary"
+            );
+
+        const runButton =
+            document.getElementById(
+                "run-test"
+            );
+
+        const suiteIdText =
+            document.getElementById(
+                "suite-id"
+            );
+
+
+        let passed = 0;
+        let failed = 0;
+        let suiteId = "";
+        let doc = null;
+
+
+        function createSuiteId() {
+
+            const bytes =
+                new Uint8Array(5);
+
+            crypto.getRandomValues(
+                bytes
+            );
+
+            return Array.from(
+                bytes,
+                byte =>
+                    byte
+                        .toString(16)
+                        .padStart(2, "0")
+            )
+                .join("");
+        }
+
+
+        function resetReport() {
+
+            passed = 0;
+            failed = 0;
+
+            results.textContent = "";
+
+            summary.textContent =
+                "Running...";
+
+            suiteId =
+                createSuiteId();
+
+            suiteIdText.textContent =
+                `Suite ID: ${suiteId}`;
+        }
+
+
+        function addGroup(title) {
+
+            const item =
+                document.createElement(
+                    "li"
+                );
+
+            item.className =
+                "group";
+
+            item.textContent =
+                title;
+
+            results.appendChild(
+                item
+            );
+        }
+
+
+        function addResult(
+            ok,
+            name,
+            detail = ""
+        ) {
+
+            const item =
+                document.createElement(
+                    "li"
+                );
+
+            item.className =
+                ok
+                    ? "pass"
+                    : "fail";
+
+            item.textContent =
+                `${ok ? "[PASS]" : "[FAIL]"} ${name}`
+                +
+                (
+                    detail
+                        ? `\n       ${detail}`
+                        : ""
+                );
+
+            results.appendChild(
+                item
+            );
+
+            if (ok) {
+                passed += 1;
+            } else {
+                failed += 1;
+            }
+
+            updateSummary();
+        }
+
+
+        function updateSummary() {
+
+            const total =
+                passed + failed;
+
+            summary.textContent =
+                `Total: ${total} | Passed: ${passed} | Failed: ${failed}`;
+        }
+
+
+        function sleep(ms) {
+
+            return new Promise(
+                resolve =>
+                    setTimeout(
+                        resolve,
+                        ms
+                    )
+            );
+        }
+
+
+        async function waitFor(
+            check,
+            timeoutMs = 5000,
+            intervalMs = 50
+        ) {
+
+            const started =
+                Date.now();
+
+            while (
+                Date.now() - started
+                <
+                timeoutMs
+            ) {
+
+                const value =
+                    check();
+
+                if (value) {
+                    return value;
+                }
+
+                await sleep(
+                    intervalMs
+                );
+            }
+
+            throw new Error(
+                "Timed out while waiting for the expected result."
+            );
+        }
+
+
+        async function runCheck(
+            name,
+            callback
+        ) {
+
+            try {
+
+                const detail =
+                    await callback();
+
+                addResult(
+                    true,
+                    name,
+                    typeof detail === "string"
+                        ? detail
+                        : ""
+                );
+
+                return true;
+
+            } catch (error) {
+
+                addResult(
+                    false,
+                    name,
+                    error.message
+                );
+
+                return false;
+            }
+        }
+
+
+        function assert(
+            condition,
+            message
+        ) {
+
+            if (!condition) {
+                throw new Error(
+                    message
+                );
+            }
+        }
+
+
+        function byId(id) {
+
+            return doc
+                ?.getElementById(
+                    id
+                );
+        }
+
+
+        function setInputValue(
+            element,
+            value
+        ) {
+
+            assert(
+                element,
+                "Input element was not found."
+            );
+
+            element.value =
+                value;
+
+            element.dispatchEvent(
+                new Event(
+                    "input",
+                    {
+                        bubbles: true,
+                    }
+                )
+            );
+
+            element.dispatchEvent(
+                new Event(
+                    "change",
+                    {
+                        bubbles: true,
+                    }
+                )
+            );
+        }
+
+
+        function submitFormDirectly(
+            form
+        ) {
+
+            assert(
+                form,
+                "Form was not found."
+            );
+
+            form.dispatchEvent(
+                new Event(
+                    "submit",
+                    {
+                        bubbles: true,
+                        cancelable: true,
+                    }
+                )
+            );
+        }
+
+
+        async function reloadApp() {
+
+            const loadPromise =
+                new Promise(
+                    (
+                        resolve,
+                        reject
+                    ) => {
+
+                        const timeout =
+                            setTimeout(
+                                () => {
+                                    reject(
+                                        new Error(
+                                            "index.html did not finish loading."
+                                        )
+                                    );
+                                },
+                                6000
+                            );
+
+                        frame.onload =
+                            () => {
+                                clearTimeout(
+                                    timeout
+                                );
+
+                                resolve();
+                            };
+                    }
+                );
+
+            frame.src =
+                `index.html?frontend-test=${Date.now()}`;
+
+            await loadPromise;
+
+            doc =
+                frame.contentDocument;
+
+            assert(
+                doc,
+                "Could not access index.html inside the test frame."
+            );
+
+            /*
+             * iframe.onload fires after its scripts have loaded.
+             * The small delay gives the page setup code time to finish.
+             */
+            await sleep(100);
+        }
+
+
+        function bytesToBase64Url(
+            bytes
+        ) {
+
+            let binary = "";
+
+            for (
+                const byte
+                of bytes
+            ) {
+                binary +=
+                    String.fromCharCode(
+                        byte
+                    );
+            }
+
+            return btoa(
+                binary
+            )
+                .replace(
+                    /\+/g,
+                    "-"
+                )
+                .replace(
+                    /\//g,
+                    "_"
+                )
+                .replace(
+                    /=+$/g,
+                    ""
+                );
+        }
+
+
+        function textToBase64Url(
+            text
+        ) {
+
+            return bytesToBase64Url(
+                new TextEncoder()
+                    .encode(
+                        text
+                    )
+            );
+        }
+
+
+        function makeBytes(
+            length,
+            value
+        ) {
+
+            return new Uint8Array(
+                length
+            )
+                .fill(
+                    value
+                );
+        }
+
+
+        function makeVeilmiEnvelope(
+            overrides = {}
+        ) {
+
+            const defaults = {
+                v: 1,
+                k: "PBKDF2-SHA256",
+                i: 100000,
+
+                s:
+                    bytesToBase64Url(
+                        makeBytes(
+                            16,
+                            1
+                        )
+                    ),
+
+                n:
+                    bytesToBase64Url(
+                        makeBytes(
+                            12,
+                            2
+                        )
+                    ),
+
+                c:
+                    bytesToBase64Url(
+                        new Uint8Array([
+                            3,
+                            4,
+                            5,
+                            6,
+                        ])
+                    ),
+
+                m:
+                    bytesToBase64Url(
+                        makeBytes(
+                            16,
+                            7
+                        )
+                    ),
+            };
+
+            return {
+                ...defaults,
+                ...overrides,
+            };
+        }
+
+
+        function encodeVeilmiEnvelope(
+            envelope
+        ) {
+
+            return (
+                "VEILMI1:"
+                +
+                textToBase64Url(
+                    JSON.stringify(
+                        envelope
+                    )
+                )
+            );
+        }
+
+
+        function makeValidCiphertext(
+            encryptedBytes = 4
+        ) {
+
+            return encodeVeilmiEnvelope(
+                makeVeilmiEnvelope({
+                    c:
+                        bytesToBase64Url(
+                            makeBytes(
+                                encryptedBytes,
+                                3
+                            )
+                        ),
+                })
+            );
+        }
+
+
+        function ciphertextByteSize(
+            ciphertext
+        ) {
+
+            return new TextEncoder()
+                .encode(
+                    ciphertext
+                )
+                .length;
+        }
+
+
+        function expectedDemoPrice(
+            ciphertext,
+            storageHours
+        ) {
+
+            const bytes =
+                ciphertextByteSize(
+                    ciphertext
+                );
+
+            if (
+                bytes <= 1024
+                &&
+                storageHours <= 24
+            ) {
+                return 0;
+            }
+
+            return Math.ceil(
+                (bytes / 1024)
+                *
+                (storageHours / 24)
+            );
+        }
+
+
+        function makeExactLengthName(
+            length,
+            prefix
+        ) {
+
+            const safePrefix =
+                prefix.slice(
+                    0,
+                    length
+                );
+
+            return (
+                safePrefix
+                +
+                "x".repeat(
+                    Math.max(
+                        0,
+                        length
+                        -
+                        Array.from(
+                            safePrefix
+                        ).length
+                    )
+                )
+            )
+                .slice(
+                    0,
+                    length
+                );
+        }
+
+
+        async function checkArticleNameViaUi(
+            name
+        ) {
+
+            setInputValue(
+                byId(
+                    "article-name"
+                ),
+                name
+            );
+
+            byId(
+                "check-name-button"
+            ).click();
+
+            const status =
+                byId(
+                    "article-name-status"
+                );
+
+            await waitFor(
+                () =>
+                    status.textContent
+                        .trim()
+                        !== ""
+                    &&
+                    !status.textContent
+                        .includes(
+                            "Checking"
+                        )
+            );
+
+            return status
+                .textContent
+                .trim();
+        }
+
+
+        function checkCiphertextViaUi(
+            ciphertext
+        ) {
+
+            setInputValue(
+                byId(
+                    "ciphertext"
+                ),
+                ciphertext
+            );
+
+            byId(
+                "check-ciphertext-button"
+            ).click();
+
+            return byId(
+                "ciphertext-status"
+            )
+                .textContent
+                .trim();
+        }
+
+
+        function expectCiphertextRejected(
+            ciphertext,
+            expectedText
+        ) {
+
+            const status =
+                checkCiphertextViaUi(
+                    ciphertext
+                );
+
+            assert(
+                status.includes(
+                    "Invalid Veilmi ciphertext"
+                ),
+                `Expected rejection, got: ${status}`
+            );
+
+            if (expectedText) {
+
+                assert(
+                    status.includes(
+                        expectedText
+                    ),
+                    `Expected message containing "${expectedText}", got: ${status}`
+                );
+            }
+        }
+
+
+        async function prepareValidPublishState(
+            articleName,
+            ciphertext,
+            storageHours = 1
+        ) {
+
+            const status =
+                await checkArticleNameViaUi(
+                    articleName
+                );
+
+            assert(
+                status.includes(
+                    "Article Name is available"
+                ),
+                `Article Name was not available: ${status}`
+            );
+
+            setInputValue(
+                byId(
+                    "storage-hours"
+                ),
+                String(
+                    storageHours
+                )
+            );
+
+            const ciphertextStatus =
+                checkCiphertextViaUi(
+                    ciphertext
+                );
+
+            assert(
+                ciphertextStatus.includes(
+                    "Valid Veilmi ciphertext"
+                ),
+                ciphertextStatus
+            );
+        }
+
+
+        async function runFrontendTest() {
+
+            resetReport();
+
+            runButton.disabled =
+                true;
+
+            try {
+
+                // =================================================
+                // Group 1 — Environment and page availability
+                // =================================================
+
+                addGroup(
+                    "1. Environment and page availability"
+                );
+
+
+                await runCheck(
+                    "Backend health endpoint is reachable from the frontend origin",
+                    async () => {
+
+                        const response =
+                            await fetch(
+                                `${BACKEND_URL}/health`
+                            );
+
+                        assert(
+                            response.ok,
+                            `HTTP ${response.status}`
+                        );
+
+                        const data =
+                            await response.json();
+
+                        assert(
+                            data.status === "ok",
+                            `Unexpected response: ${JSON.stringify(data)}`
+                        );
+                    }
+                );
+
+
+                await runCheck(
+                    "Frontend index.html loads successfully",
+                    async () => {
+
+                        await reloadApp();
+
+                        assert(
+                            doc.title
+                            ===
+                            "UnVeilmi",
+                            `Unexpected document title: ${doc.title}`
+                        );
+                    }
+                );
+
+
+                await runCheck(
+                    "Required frontend controls exist",
+                    async () => {
+
+                        const requiredIds = [
+                            "show-publish-page",
+                            "show-search-page",
+                            "publish-page",
+                            "search-page",
+                            "publish-form",
+                            "article-name",
+                            "article-name-count",
+                            "check-name-button",
+                            "ciphertext",
+                            "clear-ciphertext-button",
+                            "check-ciphertext-button",
+                            "storage-hours",
+                            "storage-status",
+                            "quote-size",
+                            "quote-hours",
+                            "quote-calculation",
+                            "quote-price",
+                            "pay-button",
+                            "payment-status",
+                            "send-button",
+                            "published-result",
+                            "published-article-name",
+                            "copy-article-name",
+                            "search-form",
+                            "search-article-name",
+                            "find-button",
+                            "copy-ciphertext",
+                            "search-result",
+                            "retrieved-ciphertext",
+                        ];
+
+                        const missing =
+                            requiredIds.filter(
+                                id =>
+                                    !byId(
+                                        id
+                                    )
+                            );
+
+                        assert(
+                            missing.length
+                            ===
+                            0,
+                            `Missing: ${missing.join(", ")}`
+                        );
+                    }
+                );
+
+
+                await runCheck(
+                    "Initial Publish / Find page state is correct",
+                    async () => {
+
+                        assert(
+                            byId(
+                                "publish-page"
+                            ).hidden
+                            ===
+                            false,
+                            "Publish page should be visible initially."
+                        );
+
+                        assert(
+                            byId(
+                                "search-page"
+                            ).hidden
+                            ===
+                            true,
+                            "Find page should be hidden initially."
+                        );
+
+                        assert(
+                            byId(
+                                "show-publish-page"
+                            )
+                                .getAttribute(
+                                    "aria-current"
+                                )
+                            ===
+                            "page",
+                            "Publish tab should be current initially."
+                        );
+                    }
+                );
+
+
+                await runCheck(
+                    "Publish and Find navigation works in both directions",
+                    async () => {
+
+                        byId(
+                            "show-search-page"
+                        ).click();
+
+                        assert(
+                            byId(
+                                "publish-page"
+                            ).hidden,
+                            "Publish page did not hide."
+                        );
+
+                        assert(
+                            !byId(
+                                "search-page"
+                            ).hidden,
+                            "Find page did not become visible."
+                        );
+
+                        assert(
+                            byId(
+                                "show-search-page"
+                            )
+                                .getAttribute(
+                                    "aria-current"
+                                )
+                            ===
+                            "page",
+                            "Find tab did not become current."
+                        );
+
+                        byId(
+                            "show-publish-page"
+                        ).click();
+
+                        assert(
+                            !byId(
+                                "publish-page"
+                            ).hidden
+                            &&
+                            byId(
+                                "search-page"
+                            ).hidden,
+                            "Could not return to Publish."
+                        );
+                    }
+                );
+
+
+                await runCheck(
+                    "Initial action buttons and result panels are safely disabled/hidden",
+                    async () => {
+
+                        assert(
+                            byId(
+                                "pay-button"
+                            ).disabled,
+                            "Pay button should start disabled."
+                        );
+
+                        assert(
+                            byId(
+                                "send-button"
+                            ).disabled,
+                            "Send button should start disabled."
+                        );
+
+                        assert(
+                            byId(
+                                "copy-article-name"
+                            ).disabled,
+                            "Copy Article Name should start disabled."
+                        );
+
+                        assert(
+                            byId(
+                                "copy-ciphertext"
+                            ).disabled,
+                            "Copy Ciphertext should start disabled."
+                        );
+
+                        assert(
+                            byId(
+                                "published-result"
+                            ).hidden,
+                            "Published result should start hidden."
+                        );
+
+                        assert(
+                            byId(
+                                "search-result"
+                            ).hidden,
+                            "Search result should start hidden."
+                        );
+                    }
+                );
+
+
+                await runCheck(
+                    "HTML storage and Find input limits match the product rules",
+                    async () => {
+
+                        const storage =
+                            byId(
+                                "storage-hours"
+                            );
+
+                        const search =
+                            byId(
+                                "search-article-name"
+                            );
+
+                        assert(
+                            storage.min === "1",
+                            `Storage min is ${storage.min}`
+                        );
+
+                        assert(
+                            storage.max === "8760",
+                            `Storage max is ${storage.max}`
+                        );
+
+                        assert(
+                            storage.step === "1",
+                            `Storage step is ${storage.step}`
+                        );
+
+                        assert(
+                            search.minLength === 1,
+                            `Find minlength is ${search.minLength}`
+                        );
+
+                        assert(
+                            search.maxLength === 50,
+                            `Find maxlength is ${search.maxLength}`
+                        );
+                    }
+                );
+
+
+                // =================================================
+                // Group 2 — Article Name validation
+                // =================================================
+
+                addGroup(
+                    "2. Article Name validation"
+                );
+
+                await reloadApp();
+
+
+                await runCheck(
+                    "Whitespace-only Article Name is rejected",
+                    async () => {
+
+                        const status =
+                            await checkArticleNameViaUi(
+                                "   "
+                            );
+
+                        assert(
+                            status.includes(
+                                "Please enter an Article Name"
+                            ),
+                            status
+                        );
+                    }
+                );
+
+
+                await runCheck(
+                    "Article Name counter counts Unicode characters correctly",
+                    async () => {
+
+                        setInputValue(
+                            byId(
+                                "article-name"
+                            ),
+                            "你🙂A"
+                        );
+
+                        assert(
+                            byId(
+                                "article-name-count"
+                            )
+                                .textContent
+                                .trim()
+                            ===
+                            "3 / 50 characters",
+                            byId(
+                                "article-name-count"
+                            )
+                                .textContent
+                                .trim()
+                        );
+                    }
+                );
+
+
+                const exact50Name =
+                    makeExactLengthName(
+                        50,
+                        `fifty-${suiteId}-`
+                    );
+
+
+                await runCheck(
+                    "Exactly 50 characters are accepted by Article Name validation",
+                    async () => {
+
+                        assert(
+                            Array.from(
+                                exact50Name
+                            ).length
+                            ===
+                            50,
+                            "Test data is not exactly 50 characters."
+                        );
+
+                        const status =
+                            await checkArticleNameViaUi(
+                                exact50Name
+                            );
+
+                        assert(
+                            status.includes(
+                                "Article Name is available"
+                            ),
+                            status
+                        );
+
+                        assert(
+                            byId(
+                                "article-name-count"
+                            )
+                                .textContent
+                                .trim()
+                            ===
+                            "50 / 50 characters",
+                            "Counter did not show 50 / 50."
+                        );
+                    }
+                );
+
+
+                await runCheck(
+                    "A 51-character Article Name is rejected",
+                    async () => {
+
+                        const name51 =
+                            `${exact50Name}x`;
+
+                        const status =
+                            await checkArticleNameViaUi(
+                                name51
+                            );
+
+                        assert(
+                            status.includes(
+                                "Maximum is 50"
+                            ),
+                            status
+                        );
+
+                        assert(
+                            byId(
+                                "article-name-count"
+                            )
+                                .textContent
+                                .trim()
+                            ===
+                            "51 / 50 characters",
+                            "Counter did not show 51 / 50."
+                        );
+
+                        assert(
+                            byId(
+                                "send-button"
+                            ).disabled,
+                            "Send should remain disabled."
+                        );
+                    }
+                );
+
+
+                await runCheck(
+                    "Editing a previously verified Article Name invalidates that verification",
+                    async () => {
+
+                        const name =
+                            `name-edit-${suiteId}`;
+
+                        const status =
+                            await checkArticleNameViaUi(
+                                name
+                            );
+
+                        assert(
+                            status.includes(
+                                "available"
+                            ),
+                            status
+                        );
+
+                        setInputValue(
+                            byId(
+                                "article-name"
+                            ),
+                            `${name}-changed`
+                        );
+
+                        assert(
+                            byId(
+                                "article-name-status"
+                            )
+                                .textContent
+                                .trim()
+                            ===
+                            "",
+                            "Old Article Name validation message was not cleared."
+                        );
+
+                        assert(
+                            byId(
+                                "send-button"
+                            ).disabled,
+                            "Send should be disabled after Article Name editing."
+                        );
+                    }
+                );
+
+
+                // =================================================
+                // Group 3 — VEILMI1 validation
+                // =================================================
+
+                addGroup(
+                    "3. VEILMI1 ciphertext validation"
+                );
+
+                await reloadApp();
+
+
+                await runCheck(
+                    "Wrong Veilmi prefix is rejected",
+                    async () => {
+
+                        expectCiphertextRejected(
+                            "VEILMI2:abc",
+                            "Invalid Veilmi message prefix"
+                        );
+                    }
+                );
+
+
+                await runCheck(
+                    "Malformed VEILMI1 Base64URL payload is rejected",
+                    async () => {
+
+                        expectCiphertextRejected(
+                            "VEILMI1:%%%not-base64%%%",
+                            "not valid Base64URL"
+                        );
+                    }
+                );
+
+
+                await runCheck(
+                    "VEILMI1 payload containing invalid JSON is rejected",
+                    async () => {
+
+                        expectCiphertextRejected(
+                            "VEILMI1:"
+                            +
+                            textToBase64Url(
+                                "this is not json"
+                            ),
+                            "not valid JSON"
+                        );
+                    }
+                );
+
+
+                await runCheck(
+                    "Veilmi envelope missing a required field is rejected",
+                    async () => {
+
+                        const envelope =
+                            makeVeilmiEnvelope();
+
+                        delete envelope.m;
+
+                        expectCiphertextRejected(
+                            encodeVeilmiEnvelope(
+                                envelope
+                            ),
+                            "missing required field 'm'"
+                        );
+                    }
+                );
+
+
+                await runCheck(
+                    "Unsupported Veilmi version is rejected",
+                    async () => {
+
+                        expectCiphertextRejected(
+                            encodeVeilmiEnvelope(
+                                makeVeilmiEnvelope({
+                                    v: 2,
+                                })
+                            ),
+                            "Unsupported Veilmi message version"
+                        );
+                    }
+                );
+
+
+                await runCheck(
+                    "Unsupported Veilmi KDF is rejected",
+                    async () => {
+
+                        expectCiphertextRejected(
+                            encodeVeilmiEnvelope(
+                                makeVeilmiEnvelope({
+                                    k: "SCRYPT",
+                                })
+                            ),
+                            "Unsupported Veilmi key derivation function"
+                        );
+                    }
+                );
+
+
+                await runCheck(
+                    "Unsupported PBKDF2 iteration count is rejected",
+                    async () => {
+
+                        expectCiphertextRejected(
+                            encodeVeilmiEnvelope(
+                                makeVeilmiEnvelope({
+                                    i: 12345,
+                                })
+                            ),
+                            "Unsupported Veilmi PBKDF2 iteration count"
+                        );
+                    }
+                );
+
+
+                await runCheck(
+                    "Invalid Veilmi salt length is rejected",
+                    async () => {
+
+                        expectCiphertextRejected(
+                            encodeVeilmiEnvelope(
+                                makeVeilmiEnvelope({
+                                    s:
+                                        bytesToBase64Url(
+                                            makeBytes(
+                                                15,
+                                                1
+                                            )
+                                        ),
+                                })
+                            ),
+                            "Invalid Veilmi salt length"
+                        );
+                    }
+                );
+
+
+                await runCheck(
+                    "Invalid Veilmi nonce length is rejected",
+                    async () => {
+
+                        expectCiphertextRejected(
+                            encodeVeilmiEnvelope(
+                                makeVeilmiEnvelope({
+                                    n:
+                                        bytesToBase64Url(
+                                            makeBytes(
+                                                11,
+                                                2
+                                            )
+                                        ),
+                                })
+                            ),
+                            "Invalid Veilmi nonce length"
+                        );
+                    }
+                );
+
+
+                await runCheck(
+                    "Invalid Veilmi MAC length is rejected",
+                    async () => {
+
+                        expectCiphertextRejected(
+                            encodeVeilmiEnvelope(
+                                makeVeilmiEnvelope({
+                                    m:
+                                        bytesToBase64Url(
+                                            makeBytes(
+                                                15,
+                                                7
+                                            )
+                                        ),
+                                })
+                            ),
+                            "Invalid Veilmi authentication tag length"
+                        );
+                    }
+                );
+
+
+                await runCheck(
+                    "Empty encrypted ciphertext field is rejected",
+                    async () => {
+
+                        expectCiphertextRejected(
+                            encodeVeilmiEnvelope(
+                                makeVeilmiEnvelope({
+                                    c: "",
+                                })
+                            ),
+                            "must be a non-empty Base64URL string"
+                        );
+                    }
+                );
+
+
+                const smallCiphertext =
+                    makeValidCiphertext();
+
+
+                await runCheck(
+                    "Structurally valid VEILMI1 ciphertext is accepted",
+                    async () => {
+
+                        const status =
+                            checkCiphertextViaUi(
+                                smallCiphertext
+                            );
+
+                        assert(
+                            status.includes(
+                                "Valid Veilmi ciphertext"
+                            ),
+                            status
+                        );
+                    }
+                );
+
+
+                await runCheck(
+                    "Clear Ciphertext removes the value and resets validation/quote state",
+                    async () => {
+
+                        assert(
+                            byId(
+                                "ciphertext"
+                            ).value
+                            !==
+                            "",
+                            "Test ciphertext was not present before clearing."
+                        );
+
+                        byId(
+                            "clear-ciphertext-button"
+                        ).click();
+
+                        assert(
+                            byId(
+                                "ciphertext"
+                            ).value
+                            ===
+                            "",
+                            "Ciphertext was not cleared."
+                        );
+
+                        assert(
+                            byId(
+                                "ciphertext-status"
+                            )
+                                .textContent
+                                .trim()
+                            ===
+                            "",
+                            "Ciphertext validation status was not cleared."
+                        );
+
+                        assert(
+                            byId(
+                                "quote-price"
+                            )
+                                .textContent
+                                .trim()
+                            ===
+                            "—",
+                            "Quote was not cleared."
+                        );
+
+                        assert(
+                            byId(
+                                "pay-button"
+                            ).disabled,
+                            "Pay should be disabled after clearing ciphertext."
+                        );
+
+                        assert(
+                            byId(
+                                "send-button"
+                            ).disabled,
+                            "Send should be disabled after clearing ciphertext."
+                        );
+                    }
+                );
+
+
+                // =================================================
+                // Group 4 — Storage, pricing, and state invalidation
+                // =================================================
+
+                addGroup(
+                    "4. Storage, pricing, and state invalidation"
+                );
+
+                await reloadApp();
+
+                checkCiphertextViaUi(
+                    smallCiphertext
+                );
+
+
+                await runCheck(
+                    "Blank storage duration is rejected",
+                    async () => {
+
+                        setInputValue(
+                            byId(
+                                "storage-hours"
+                            ),
+                            ""
+                        );
+
+                        assert(
+                            byId(
+                                "storage-status"
+                            )
+                                .textContent
+                                .includes(
+                                    "Please enter a storage duration"
+                                ),
+                            byId(
+                                "storage-status"
+                            )
+                                .textContent
+                        );
+
+                        assert(
+                            byId(
+                                "quote-price"
+                            )
+                                .textContent
+                                .trim()
+                            ===
+                            "—",
+                            "Quote should be cleared."
+                        );
+                    }
+                );
+
+
+                await runCheck(
+                    "Zero-hour storage is rejected",
+                    async () => {
+
+                        setInputValue(
+                            byId(
+                                "storage-hours"
+                            ),
+                            "0"
+                        );
+
+                        assert(
+                            byId(
+                                "storage-status"
+                            )
+                                .textContent
+                                .includes(
+                                    "at least 1 hour"
+                                ),
+                            byId(
+                                "storage-status"
+                            )
+                                .textContent
+                        );
+                    }
+                );
+
+
+                await runCheck(
+                    "Non-integer storage duration is rejected",
+                    async () => {
+
+                        setInputValue(
+                            byId(
+                                "storage-hours"
+                            ),
+                            "1.5"
+                        );
+
+                        assert(
+                            byId(
+                                "storage-status"
+                            )
+                                .textContent
+                                .includes(
+                                    "at least 1 hour"
+                                ),
+                            byId(
+                                "storage-status"
+                            )
+                                .textContent
+                        );
+                    }
+                );
+
+
+                await runCheck(
+                    "Storage duration above 8760 hours is rejected",
+                    async () => {
+
+                        setInputValue(
+                            byId(
+                                "storage-hours"
+                            ),
+                            "8761"
+                        );
+
+                        assert(
+                            byId(
+                                "storage-status"
+                            )
+                                .textContent
+                                .includes(
+                                    "cannot exceed 8760 hours"
+                                ),
+                            byId(
+                                "storage-status"
+                            )
+                                .textContent
+                        );
+                    }
+                );
+
+
+                await runCheck(
+                    "1-hour small ciphertext receives the free-tier USD 0 quote",
+                    async () => {
+
+                        setInputValue(
+                            byId(
+                                "storage-hours"
+                            ),
+                            "1"
+                        );
+
+                        assert(
+                            byId(
+                                "storage-status"
+                            )
+                                .textContent
+                                .trim()
+                            ===
+                            "",
+                            byId(
+                                "storage-status"
+                            )
+                                .textContent
+                        );
+
+                        assert(
+                            byId(
+                                "quote-price"
+                            )
+                                .textContent
+                                .trim()
+                            ===
+                            "USD 0",
+                            byId(
+                                "quote-price"
+                            )
+                                .textContent
+                        );
+
+                        assert(
+                            byId(
+                                "pay-button"
+                            )
+                                .textContent
+                                .trim()
+                            ===
+                            "Confirm Free Storage",
+                            "Free-tier button text is incorrect."
+                        );
+                    }
+                );
+
+
+                await runCheck(
+                    "Quote displays the ciphertext byte size correctly",
+                    async () => {
+
+                        const expected =
+                            `${ciphertextByteSize(smallCiphertext)} bytes`;
+
+                        assert(
+                            byId(
+                                "quote-size"
+                            )
+                                .textContent
+                                .trim()
+                            ===
+                            expected,
+                            `Expected ${expected}, got ${byId("quote-size").textContent.trim()}`
+                        );
+                    }
+                );
+
+
+                await runCheck(
+                    "24-hour small ciphertext remains in the free tier",
+                    async () => {
+
+                        setInputValue(
+                            byId(
+                                "storage-hours"
+                            ),
+                            "24"
+                        );
+
+                        assert(
+                            byId(
+                                "quote-price"
+                            )
+                                .textContent
+                                .trim()
+                            ===
+                            "USD 0",
+                            byId(
+                                "quote-price"
+                            )
+                                .textContent
+                        );
+                    }
+                );
+
+
+                await runCheck(
+                    "Small ciphertext becomes billable after 24 hours",
+                    async () => {
+
+                        setInputValue(
+                            byId(
+                                "storage-hours"
+                            ),
+                            "25"
+                        );
+
+                        const expected =
+                            expectedDemoPrice(
+                                smallCiphertext,
+                                25
+                            );
+
+                        assert(
+                            expected > 0,
+                            "Test data unexpectedly remained free."
+                        );
+
+                        assert(
+                            byId(
+                                "quote-price"
+                            )
+                                .textContent
+                                .trim()
+                            ===
+                            `USD ${expected}`,
+                            `Expected USD ${expected}, got ${byId("quote-price").textContent.trim()}`
+                        );
+
+                        assert(
+                            byId(
+                                "pay-button"
+                            )
+                                .textContent
+                                .trim()
+                            ===
+                            `Pay USD ${expected}`,
+                            "Billable button text is incorrect."
+                        );
+                    }
+                );
+
+
+                const largeCiphertext =
+                    makeValidCiphertext(
+                        900
+                    );
+
+
+                await runCheck(
+                    "Ciphertext over 1 KB is billable within 24 hours",
+                    async () => {
+
+                        assert(
+                            ciphertextByteSize(
+                                largeCiphertext
+                            )
+                            >
+                            1024,
+                            "Large test ciphertext is not actually over 1 KB."
+                        );
+
+                        checkCiphertextViaUi(
+                            largeCiphertext
+                        );
+
+                        setInputValue(
+                            byId(
+                                "storage-hours"
+                            ),
+                            "24"
+                        );
+
+                        const expected =
+                            expectedDemoPrice(
+                                largeCiphertext,
+                                24
+                            );
+
+                        assert(
+                            expected > 0,
+                            "Expected a billable price."
+                        );
+
+                        assert(
+                            byId(
+                                "quote-price"
+                            )
+                                .textContent
+                                .trim()
+                            ===
+                            `USD ${expected}`,
+                            `Expected USD ${expected}, got ${byId("quote-price").textContent.trim()}`
+                        );
+                    }
+                );
+
+
+                await runCheck(
+                    "Maximum 8760-hour storage duration is accepted by the frontend",
+                    async () => {
+
+                        checkCiphertextViaUi(
+                            smallCiphertext
+                        );
+
+                        setInputValue(
+                            byId(
+                                "storage-hours"
+                            ),
+                            "8760"
+                        );
+
+                        assert(
+                            byId(
+                                "storage-status"
+                            )
+                                .textContent
+                                .trim()
+                            ===
+                            "",
+                            byId(
+                                "storage-status"
+                            )
+                                .textContent
+                        );
+
+                        assert(
+                            byId(
+                                "quote-price"
+                            )
+                                .textContent
+                                .trim()
+                                .startsWith(
+                                    "USD "
+                                ),
+                            "No quote was produced."
+                        );
+                    }
+                );
+
+
+                const stateName =
+                    `state-${suiteId}`;
+
+                await prepareValidPublishState(
+                    stateName,
+                    smallCiphertext,
+                    1
+                );
+
+
+                await runCheck(
+                    "Send remains disabled before free-storage/payment confirmation",
+                    async () => {
+
+                        assert(
+                            byId(
+                                "send-button"
+                            ).disabled,
+                            "Send should be disabled before confirmation."
+                        );
+                    }
+                );
+
+
+                await runCheck(
+                    "Free-storage confirmation enables Send when all other inputs are verified",
+                    async () => {
+
+                        byId(
+                            "pay-button"
+                        ).click();
+
+                        assert(
+                            byId(
+                                "payment-status"
+                            )
+                                .textContent
+                                .includes(
+                                    "Free storage confirmed"
+                                ),
+                            byId(
+                                "payment-status"
+                            )
+                                .textContent
+                        );
+
+                        assert(
+                            byId(
+                                "send-button"
+                            ).disabled
+                            ===
+                            false,
+                            "Send did not become enabled."
+                        );
+                    }
+                );
+
+
+                await runCheck(
+                    "Editing storage duration invalidates the previous payment confirmation",
+                    async () => {
+
+                        setInputValue(
+                            byId(
+                                "storage-hours"
+                            ),
+                            "2"
+                        );
+
+                        assert(
+                            byId(
+                                "payment-status"
+                            )
+                                .textContent
+                                .trim()
+                            ===
+                            "",
+                            "Old payment confirmation was not cleared."
+                        );
+
+                        assert(
+                            byId(
+                                "send-button"
+                            ).disabled,
+                            "Send should be disabled after storage editing."
+                        );
+                    }
+                );
+
+
+                await runCheck(
+                    "Editing ciphertext invalidates previous ciphertext verification and quote",
+                    async () => {
+
+                        /*
+                         * Restore a confirmed state first.
+                         */
+                        setInputValue(
+                            byId(
+                                "storage-hours"
+                            ),
+                            "1"
+                        );
+
+                        byId(
+                            "pay-button"
+                        ).click();
+
+                        assert(
+                            !byId(
+                                "send-button"
+                            ).disabled,
+                            "Could not prepare confirmed state."
+                        );
+
+                        setInputValue(
+                            byId(
+                                "ciphertext"
+                            ),
+                            `${smallCiphertext} `
+                        );
+
+                        assert(
+                            byId(
+                                "ciphertext-status"
+                            )
+                                .textContent
+                                .trim()
+                            ===
+                            "",
+                            "Old ciphertext validation was not cleared."
+                        );
+
+                        assert(
+                            byId(
+                                "quote-price"
+                            )
+                                .textContent
+                                .trim()
+                            ===
+                            "—",
+                            "Old quote was not cleared."
+                        );
+
+                        assert(
+                            byId(
+                                "pay-button"
+                            ).disabled,
+                            "Pay should be disabled after ciphertext editing."
+                        );
+
+                        assert(
+                            byId(
+                                "send-button"
+                            ).disabled,
+                            "Send should be disabled after ciphertext editing."
+                        );
+                    }
+                );
+
+
+                await runCheck(
+                    "Editing Article Name invalidates previous name verification and disables Send",
+                    async () => {
+
+                        /*
+                         * Restore ciphertext and payment first.
+                         */
+                        checkCiphertextViaUi(
+                            smallCiphertext
+                        );
+
+                        setInputValue(
+                            byId(
+                                "storage-hours"
+                            ),
+                            "1"
+                        );
+
+                        byId(
+                            "pay-button"
+                        ).click();
+
+                        assert(
+                            !byId(
+                                "send-button"
+                            ).disabled,
+                            "Could not prepare confirmed state."
+                        );
+
+                        setInputValue(
+                            byId(
+                                "article-name"
+                            ),
+                            `${stateName}-edited`
+                        );
+
+                        assert(
+                            byId(
+                                "article-name-status"
+                            )
+                                .textContent
+                                .trim()
+                            ===
+                            "",
+                            "Old Article Name validation was not cleared."
+                        );
+
+                        assert(
+                            byId(
+                                "send-button"
+                            ).disabled,
+                            "Send should be disabled after Article Name editing."
+                        );
+                    }
+                );
+
+
+                // =================================================
+                // Group 5 — Publish and Find integration
+                // =================================================
+
+                addGroup(
+                    "5. Publish and Find integration"
+                );
+
+                await reloadApp();
+
+
+                const publishName =
+                    `frontend-e2e-${suiteId}`;
+
+                const publishCiphertext =
+                    makeValidCiphertext();
+
+
+                await runCheck(
+                    "A complete valid Publish state can be prepared",
+                    async () => {
+
+                        await prepareValidPublishState(
+                            publishName,
+                            publishCiphertext,
+                            1
+                        );
+
+                        assert(
+                            byId(
+                                "quote-price"
+                            )
+                                .textContent
+                                .trim()
+                            ===
+                            "USD 0",
+                            "Expected free-tier quote."
+                        );
+
+                        byId(
+                            "pay-button"
+                        ).click();
+
+                        assert(
+                            !byId(
+                                "send-button"
+                            ).disabled,
+                            "Send did not become enabled."
+                        );
+                    }
+                );
+
+
+                await runCheck(
+                    "Publish succeeds through the real frontend and backend",
+                    async () => {
+
+                        byId(
+                            "send-button"
+                        ).click();
+
+                        await waitFor(
+                            () =>
+                                !byId(
+                                    "published-result"
+                                ).hidden
+                                &&
+                                byId(
+                                    "published-article-name"
+                                )
+                                    .textContent
+                                    .trim()
+                                ===
+                                publishName,
+                            8000
+                        );
+
+                        assert(
+                            byId(
+                                "published-article-name"
+                            )
+                                .textContent
+                                .trim()
+                            ===
+                            publishName,
+                            "Published Article Name did not match."
+                        );
+                    }
+                );
+
+
+                await runCheck(
+                    "Successful Publish resets the form but preserves the published Article Name",
+                    async () => {
+
+                        assert(
+                            byId(
+                                "article-name"
+                            ).value
+                            ===
+                            "",
+                            "Article Name input was not reset."
+                        );
+
+                        assert(
+                            byId(
+                                "ciphertext"
+                            ).value
+                            ===
+                            "",
+                            "Ciphertext input was not reset."
+                        );
+
+                        assert(
+                            byId(
+                                "storage-hours"
+                            ).value
+                            ===
+                            "24",
+                            "Storage did not reset to 24 hours."
+                        );
+
+                        assert(
+                            byId(
+                                "send-button"
+                            ).disabled,
+                            "Send should be disabled after reset."
+                        );
+
+                        assert(
+                            byId(
+                                "published-article-name"
+                            )
+                                .textContent
+                                .trim()
+                            ===
+                            publishName,
+                            "Published Article Name was unexpectedly cleared."
+                        );
+
+                        assert(
+                            !byId(
+                                "copy-article-name"
+                            ).disabled,
+                            "Copy Article Name should be enabled."
+                        );
+
+                        assert(
+                            byId(
+                                "copy-article-name"
+                            )
+                                .dataset
+                                .copyValue
+                            ===
+                            publishName,
+                            "Copy Article Name contains the wrong value."
+                        );
+                    }
+                );
+
+
+                await runCheck(
+                    "The published Article Name is reported as already in use",
+                    async () => {
+
+                        const statusPromise =
+                            checkArticleNameViaUi(
+                                publishName
+                            );
+
+                        const status =
+                            await statusPromise;
+
+                        assert(
+                            status.includes(
+                                "already in use"
+                            ),
+                            status
+                        );
+                    }
+                );
+
+
+                await runCheck(
+                    "Find rejects an empty Article Name",
+                    async () => {
+
+                        byId(
+                            "show-search-page"
+                        ).click();
+
+                        setInputValue(
+                            byId(
+                                "search-article-name"
+                            ),
+                            ""
+                        );
+
+                        submitFormDirectly(
+                            byId(
+                                "search-form"
+                            )
+                        );
+
+                        await waitFor(
+                            () =>
+                                byId(
+                                    "search-status"
+                                )
+                                    .textContent
+                                    .trim()
+                                !==
+                                ""
+                        );
+
+                        assert(
+                            byId(
+                                "search-status"
+                            )
+                                .textContent
+                                .includes(
+                                    "Please enter an Article Name"
+                                ),
+                            byId(
+                                "search-status"
+                            )
+                                .textContent
+                        );
+                    }
+                );
+
+
+                await runCheck(
+                    "Find rejects an Article Name longer than 50 characters",
+                    async () => {
+
+                        setInputValue(
+                            byId(
+                                "search-article-name"
+                            ),
+                            "x".repeat(
+                                51
+                            )
+                        );
+
+                        submitFormDirectly(
+                            byId(
+                                "search-form"
+                            )
+                        );
+
+                        await waitFor(
+                            () =>
+                                byId(
+                                    "search-status"
+                                )
+                                    .textContent
+                                    .trim()
+                                !==
+                                ""
+                        );
+
+                        assert(
+                            byId(
+                                "search-status"
+                            )
+                                .textContent
+                                .includes(
+                                    "Maximum is 50"
+                                ),
+                            byId(
+                                "search-status"
+                            )
+                                .textContent
+                        );
+                    }
+                );
+
+
+                await runCheck(
+                    "Find retrieves the published ciphertext",
+                    async () => {
+
+                        setInputValue(
+                            byId(
+                                "search-article-name"
+                            ),
+                            publishName
+                        );
+
+                        submitFormDirectly(
+                            byId(
+                                "search-form"
+                            )
+                        );
+
+                        await waitFor(
+                            () =>
+                                byId(
+                                    "search-status"
+                                )
+                                    .textContent
+                                    .includes(
+                                        "Ciphertext found"
+                                    ),
+                            8000
+                        );
+
+                        assert(
+                            !byId(
+                                "search-result"
+                            ).hidden,
+                            "Search result is still hidden."
+                        );
+                    }
+                );
+
+
+                await runCheck(
+                    "Retrieved ciphertext exactly matches the published ciphertext",
+                    async () => {
+
+                        assert(
+                            byId(
+                                "retrieved-ciphertext"
+                            )
+                                .textContent
+                                .trim()
+                            ===
+                            publishCiphertext,
+                            "Retrieved ciphertext differs from the submitted ciphertext."
+                        );
+                    }
+                );
+
+
+                await runCheck(
+                    "Successful Find enables Copy Ciphertext with the correct value",
+                    async () => {
+
+                        const button =
+                            byId(
+                                "copy-ciphertext"
+                            );
+
+                        assert(
+                            !button.disabled,
+                            "Copy Ciphertext remained disabled."
+                        );
+
+                        assert(
+                            button.dataset
+                                .copyValue
+                            ===
+                            publishCiphertext,
+                            "Copy Ciphertext contains the wrong value."
+                        );
+                    }
+                );
+
+
+                await runCheck(
+                    "A missing Article Name returns not-found state and clears the previous result",
+                    async () => {
+
+                        const missingName =
+                            `missing-${suiteId}`;
+
+                        setInputValue(
+                            byId(
+                                "search-article-name"
+                            ),
+                            missingName
+                        );
+
+                        submitFormDirectly(
+                            byId(
+                                "search-form"
+                            )
+                        );
+
+                        await waitFor(
+                            () =>
+                                byId(
+                                    "search-status"
+                                )
+                                    .textContent
+                                    .includes(
+                                        "not found or expired"
+                                    ),
+                            8000
+                        );
+
+                        assert(
+                            byId(
+                                "search-result"
+                            ).hidden,
+                            "Old search result should be hidden."
+                        );
+
+                        assert(
+                            byId(
+                                "retrieved-ciphertext"
+                            )
+                                .textContent
+                                .trim()
+                            ===
+                            "",
+                            "Old ciphertext should be cleared."
+                        );
+
+                        assert(
+                            byId(
+                                "copy-ciphertext"
+                            ).disabled,
+                            "Copy Ciphertext should be disabled after not-found."
+                        );
+                    }
+                );
+
+
+            } catch (error) {
+
+                addResult(
+                    false,
+                    "Fatal test runner error",
+                    error.message
+                );
+
+            } finally {
+
+                runButton.disabled =
+                    false;
+
+                const total =
+                    passed + failed;
+
+                summary.textContent =
+                    failed === 0
+
+                        ? (
+                            `All ${total} frontend availability and validation checks passed.`
+                        )
+
+                        : (
+                            `${failed} of ${total} checks failed. `
+                            +
+                            "Review the [FAIL] messages above."
+                        );
+            }
+        }
+
+
+        runButton.addEventListener(
+            "click",
+            runFrontendTest
+        );
+
+
+        window.addEventListener(
+            "load",
+            runFrontendTest
+        );
+    </script>
+
+</body>
+</html>
