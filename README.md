@@ -4,7 +4,7 @@
 > Let the everyday conversation carry only the clue.**
 
 > **Veilmi handles the secret.  
-> UnVeilmi handles the ciphertext.**
+> UnVeilmi handles the ciphertext storage.**
 
 UnVeilmi is a Proof of Concept for a different kind of encrypted communication workflow.
 
@@ -12,30 +12,28 @@ If you paste a long encrypted message directly into LINE, a workplace chat, or a
 
 UnVeilmi separates those two things.
 
-The everyday chat carries only a short **Article Name**.
-
-UnVeilmi stores the ciphertext separately.
-
-Veilmi decrypts it locally.
+The everyday chat carries only a short **Article Name**—or, you could say, the clue.
 
 ```text
 Visible conversation
 "did you get home"
         ↓
-Article Name
+Article Name (clue)
         ↓
-UnVeilmi
+UnVeilmi (Find)
         ↓
 VEILMI1 ciphertext
         ↓
-Veilmi
+Veilmi (Decrypt)
         ↓
 Hidden plaintext
 ```
 
-The goal is not to pretend encryption does not exist.
+UnVeilmi stores and finds the ciphertext.
 
-The goal is to avoid placing the obvious ciphertext itself inside the normal conversation channel.
+Veilmi encrypts and decrypts it locally.
+
+The goal is to make encrypted communication less visually obvious by not placing the ciphertext itself inside the "normal" conversation channel.
 
 ---
 
@@ -72,7 +70,7 @@ In the video:
 did you get home
 ```
 
-is searched in UnVeilmi.
+is searched for in UnVeilmi.
 
 UnVeilmi returns a ciphertext.
 
@@ -108,82 +106,6 @@ See:
 
 ---
 
-## Why UnVeilmi Exists
-
-Veilmi already solves one part of the problem:
-
-> Encrypt and decrypt text locally, without needing an account or network connection.
-
-But there is still a practical question:
-
-> **Where should the ciphertext go?**
-
-Sending the ciphertext directly through an ordinary chat works, but it also makes the encrypted communication visually obvious.
-
-UnVeilmi proposes another pattern:
-
-```text
-Normal chat
-   ↓
-short locator only
-
-UnVeilmi
-   ↓
-temporary ciphertext storage
-
-Veilmi
-   ↓
-local decryption
-```
-
-This creates a clean separation:
-
-> **The Article Name locates the ciphertext.  
-> The Veilmi passphrase protects the plaintext.**
-
----
-
-## The Bigger Idea
-
-UnVeilmi is currently a local Proof of Concept.
-
-But the idea is intentionally broader.
-
-A future public instance could allow people who need this communication pattern to use UnVeilmi without running their own server.
-
-A team or organization could also adapt the project and host its own version on infrastructure it controls.
-
-For example, an internal deployment could look like:
-
-```text
-Existing workplace chat
-        ↓
-short Article Name
-
-Organization-hosted UnVeilmi
-        ↓
-temporary ciphertext
-
-Veilmi on each user's device
-        ↓
-local decryption
-```
-
-That could be useful when people need to exchange legitimate sensitive text while keeping the visible conversation channel simple and ordinary.
-
-Examples might include:
-
-- an internal team discussing a private draft;
-- a small organization separating sensitive notes from normal chat history;
-- a research group testing privacy-preserving communication workflows;
-- a self-hosted environment where the organization wants control of its own ciphertext storage.
-
-UnVeilmi is not currently a production service, and any real deployment would still need proper infrastructure, policy, security, and legal review.
-
-But the PoC is meant to show that the communication model itself can work.
-
----
-
 ## Why Veilmi Matters
 
 UnVeilmi does not encrypt or decrypt messages.
@@ -206,9 +128,7 @@ The UnVeilmi server does not need the plaintext or Veilmi passphrase.
 
 This is one of the most important design boundaries in the project.
 
-If you want to try the demo or use the workflow yourself, start with Veilmi:
-
-[Get Veilmi](https://noa-jou.github.io/Veilmi/closed-testing.html)
+If you want to try the demo or use the workflow yourself, start with [Get Veilmi](https://noa-jou.github.io/Veilmi/closed-testing.html)
 
 ---
 
@@ -250,58 +170,54 @@ Enter shared passphrase
 Decrypt locally
 ```
 
-The Article Name is only a locator.
+The Article Name is only a locator / a clue.
 
 It is not a password and should not be treated as a secret.
 
-For the full architecture, see:
-
-[Architecture](docs/Architecture.md)
-
 ---
 
-## Current Proof of Concept
+## The Bigger Idea
 
-| Part | Current implementation |
-|---|---|
-| Frontend | HTML / CSS / JavaScript |
-| Backend | Python / FastAPI |
-| Database | SQLite |
-| Environment | Local Chromebook Debian environment |
-| Storage | Temporary ciphertext storage |
-| Payment | Simulation only |
-| Deployment | Local only |
-| Accounts | None |
+UnVeilmi is currently a local Proof of Concept.
 
-The current services run locally at:
+But the idea is intentionally broader.
+
+A future public instance could allow people who need this communication pattern to use UnVeilmi without running their own server.
+
+A team or organization could also adapt the project and host its own version on infrastructure it controls.
+
+For example, an internal deployment could look like:
 
 ```text
-Frontend → http://127.0.0.1:5500
-Backend  → http://127.0.0.1:8000
+Existing workplace chat
+        ↓
+send short Article Name (clue)
+
+--
+
+Organization-hosted UnVeilmi
+        ↓
+temporary ciphertext storage that can be accessed by each intended user
+
+--
+
+Veilmi on each user's device
+        ↓
+local decryption
 ```
 
-This is not yet a public UnVeilmi service.
+That could be useful when people need to exchange legitimate sensitive text while keeping the visible conversation channel simple and ordinary.
 
----
+Examples might include:
 
-## Core Features
+- an internal team discussing a private draft;
+- a small organization separating sensitive notes from normal chat history;
+- a research group testing privacy-preserving communication workflows;
+- a self-hosted environment where the organization wants control of its own ciphertext storage.
 
-- Publish Veilmi ciphertext without putting that ciphertext directly in the visible chat.
-- Use an ordinary-looking Article Name as a locator.
-- Retrieve ciphertext by exact Article Name.
-- Keep plaintext encryption and decryption inside Veilmi.
-- Store ciphertext temporarily instead of permanently.
-- Reuse an Article Name after the old post expires.
-- Validate the expected `VEILMI1` structure.
-- Recalculate storage price on the backend instead of trusting the browser.
-- Run automated backend and frontend regression tests.
-- Operate without user accounts or personal profiles.
+UnVeilmi is not currently a production service, and any real deployment would still need proper infrastructure, policy, security, and legal review.
 
-UnVeilmi intentionally avoids becoming a full social network or messaging platform.
-
-Its job is much smaller:
-
-> **Temporarily store and retrieve Veilmi ciphertext.**
+But the PoC is meant to show that the communication model itself can work.
 
 ---
 
@@ -309,142 +225,45 @@ Its job is much smaller:
 
 UnVeilmi is especially interesting as a project that can be adapted.
 
-A developer, small team, or organization could fork the project and change things such as:
-
-```text
-hostname
-storage rules
-retention period
-UI
-pricing model
-deployment environment
-```
+A developer, small team, or organization could fork the project and change things such as the hostname, storage rules, retention period, etc.
 
 while keeping the central idea:
 
 ```text
-Everyday channel
-carries the locator
+Everyday channel: carries the locator / clue / Article Name
 
-UnVeilmi
-carries the ciphertext
+UnVeilmi: carries the ciphertext
 
-Veilmi
-reveals the message
+Veilmi: handles the real message
 ```
 
 A private deployment could run on an organization's own server rather than a public UnVeilmi instance.
 
-The current repository is only a local PoC, so production deployment still requires additional work such as HTTPS, rate limiting, monitoring, abuse controls, and infrastructure hardening.
+However, the current repository is only a local PoC, so production deployment still requires additional work such as HTTPS, rate limiting, monitoring, abuse controls, and infrastructure hardening.
 
 For the reasoning behind the current choices, see:
+[Design Decisions — §7 Why Is the Current PoC Local?](docs/Design_Decisions.md#7-why-is-the-current-poc-local)
 
-[Design Decisions](docs/Design_Decisions.md)
+UnVeilmi intentionally avoids becoming a full social network or messaging platform.
+
 
 ---
 
-## Security Idea
+## Current Project Structure
 
-UnVeilmi is designed so the storage service does not need the information required to read the message.
+| Part | Current implementation |
+|---|---|
+| Frontend | HTML / CSS / JavaScript |
+| Backend | Python / FastAPI |
+| Database | SQLite |
+| Environment | Local Debian environment |
+| Storage | Temporary ciphertext storage |
+| Payment | Simulation only |
+| Deployment | Local only |
+| Accounts | None |
 
-If the SQLite database is copied, it may expose:
+For the full architecture, see: [Architecture](docs/Architecture.md)
 
-```text
-Article Name
-ciphertext
-ciphertext size
-timestamps
-storage metadata
-```
-
-but it is not designed to contain:
-
-```text
-plaintext
-Veilmi passphrase
-```
-
-That means stealing the UnVeilmi database alone should not directly reveal what the encrypted messages say.
-
-This is not the same as complete anonymity or perfect security.
-
-A public network service could still expose metadata such as IP addresses, request times, message sizes, and access patterns.
-
-For the full threat model and limitations, see:
-
-[Security Model](docs/Security_Model.md)
-
----
-
-## Pricing and Temporary Storage
-
-The current PoC includes a demonstration pricing model:
-
-```text
-ciphertext size
-      ×
-storage duration
-```
-
-A post is free when:
-
-```text
-ciphertext size <= 1024 bytes
-AND
-storage duration <= 24 hours
-```
-
-Otherwise, the demonstration price is based on:
-
-```text
-USD 1 per KB-day
-```
-
-No real payment is processed.
-
-Posts are temporary.
-
-Expired records are removed during relevant backend activity.
-
-For the full lifecycle and formula, see:
-
-[Pricing and Storage](docs/Pricing_and_Storage.md)
-
----
-
-## Testing
-
-UnVeilmi currently has two automated development-test layers:
-
-```text
-backend_availability_and_security_test.py
-        ↓
-39 backend checks
-
-
-frontend_availability_and_validation_test.html
-        ↓
-50 frontend checks
-```
-
-The tests cover things such as:
-
-- API availability;
-- frontend validation;
-- backend validation;
-- Article Name rules;
-- VEILMI1 structure;
-- pricing;
-- expiry;
-- SQL-injection-style input handling;
-- CORS behaviour;
-- Publish → Find integration.
-
-These are development regression tests, not a professional security audit or cryptographic audit.
-
-See:
-
-[Testing](docs/Testing.md)
 
 ---
 
@@ -466,9 +285,15 @@ See:
 
 [Testing](docs/Testing.md)
 
+### 5. Try It Yourself Manually
+
+After completing steps 1–4, just open a browser and play with:
+
+[http://127.0.0.1:5500](http://127.0.0.1:5500)
+
 ---
 
-## Documentation
+## Full Documentation List (if you really want to know more)
 
 | Document | What it explains |
 |---|---|
@@ -484,7 +309,7 @@ See:
 
 ---
 
-## Current Limitations
+## Current Limitations !!!
 
 The current version is a local Proof of Concept.
 
@@ -515,7 +340,7 @@ You are welcome to study, modify, and deploy the project.
 
 For network-hosted modifications, AGPL-3.0 is intended to keep improvements available to the open-source community.
 
-See the repository `LICENSE` file for the full license text.
+See the repository [LICENSE](LICENSE) file for the full license text.
 
 ---
 
@@ -523,7 +348,7 @@ See the repository `LICENSE` file for the full license text.
 
 **Noa Jou**
 
-UnVeilmi is an independent companion project to Veilmi.
+UnVeilmi is a companion project to Veilmi.
 
 I hope this project can eventually become more than a local demonstration:
 
@@ -531,8 +356,4 @@ I hope this project can eventually become more than a local demonstration:
 - a self-hosted tool for teams that want to adapt it;
 - or an idea that another developer takes further.
 
-If UnVeilmi makes you curious, start with Veilmi.
-
-> **The communication channel carries the locator.  
-> UnVeilmi carries the ciphertext.  
-> Veilmi reveals the message.**
+If UnVeilmi makes you curious, please take a look at [Veilmi](https://github.com/noa-jou/Veilmi) too.
