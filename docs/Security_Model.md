@@ -185,7 +185,7 @@ For example, the backend checks Article Names, storage values, prices, and wheth
 The exact cases are already documented and tested in:
 
 - [Auto Testing — §2 What the Backend Checks Do](Auto_Testing.md#2-what-the-backend-checks-do)
-- [Auto Testing — §7 What the Frontend Checks Do](Auto_Testing.md#7-what-the-frontend-checks-do)
+- [Auto Testing — §6 What the Frontend Checks Do](Auto_Testing.md#6-what-the-frontend-checks-do)
 
 There is no need to repeat the individual validation rules here.
 
@@ -247,7 +247,7 @@ A **threat model** is a short list of things that could go wrong and how the des
 | An expired post is requested | Expired records are cleaned during relevant backend operations. |
 | An unrelated website tries to use the local API through a browser | CORS restricts which browser origins receive permission. |
 
-The automated evidence for these behaviours is documented in [Auto Testing — §2 What the 39 Backend Checks Do](Auto_Testing.md#2-what-the-39-backend-checks-do).
+The automated evidence for these behaviours is documented in [Auto Testing — §2 What the Backend Checks Do](Auto_Testing.md#2-what-the-backend-checks-do).
 
 ---
 
@@ -314,7 +314,7 @@ complete anonymity
 
 Its automated tests are also development tests, not a professional security or cryptographic audit.
 
-For the specific limits of the browser test, see [Auto Testing — §6 Frontend Test Results → What This Frontend Test Does Not Check](Auto_Testing.md#what-this-frontend-test-does-not-check).
+For the specific limits of the browser test, see [Auto Testing — §7 What to Test Manually → What This Frontend Test Does Not Check](Auto_Testing.md#what-this-frontend-test-does-not-check).
 
 Security still depends on things outside UnVeilmi, especially:
 
