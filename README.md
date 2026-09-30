@@ -357,3 +357,11 @@ I hope this project can eventually become more than a local demonstration:
 - or an idea that another developer takes further.
 
 If UnVeilmi makes you curious, please take a look at [Veilmi](https://github.com/noa-jou/Veilmi) too.
+
+### What I learn unexpectedly:
+
+[GitHub_Actions_Docs_Check_Learning_Note](docs/GitHub_Actions_Docs_Check_Learning_Note.md)
+
+### If you want to support me on more creation:
+
+[Buy me a coffee](https://buymeacoffee.com/noajou)
