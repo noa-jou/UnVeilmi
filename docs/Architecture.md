@@ -210,7 +210,7 @@ The backend uses parameterized SQL queries so Article Names are treated as data 
 Security details belong in:
 
 - `Security_Model.md`
-- `Testing.md`
+- `Auto_Testing.md`
 
 ---
 
@@ -303,11 +303,11 @@ Its purpose is narrower:
 | [Database Setup](Set_Up_DB.md) | Create and inspect the SQLite database |
 | [Backend Setup](Set_Up_Backend.md) | Install, run, and test the FastAPI backend |
 | [Frontend Setup](Set_Up_Frontend.md) | Run the local web frontend |
-| `Pricing_and_Storage.md` | Pricing, free tier, storage duration, expiry, and cleanup |
-| `Security_Model.md` | Security boundaries, assumptions, limitations, and metadata concerns |
-| `Testing.md` | Availability, validation, database, pricing, and security-related tests |
-| `Demo_Guide.md` | Demo data and demonstration flow |
-| `Design_Decisions.md` | Why the project intentionally uses this architecture |
+| [Pricing_and_Storage.md](Pricing_and_Storage.md) | Pricing, free tier, storage duration, expiry, and cleanup |
+| [Security_Model.md](Security_Model.md) | Security boundaries, assumptions, limitations, and metadata concerns |
+| [Auto_Testing.md]() | Availability, validation, database, pricing, and security-related tests |
+| [Easter_Egg_Guide.md](Easter_Egg_Guide.md) | To continue the story of the demo video |
+| [Design_Decisions.md](Design_Decisions.md) | Why the project intentionally uses this architecture |
 
 ---
 

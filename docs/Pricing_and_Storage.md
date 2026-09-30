@@ -232,7 +232,7 @@ For database creation and trigger details, see:
 For backend validation and testing, see:
 
 - [Backend Setup](Set_Up_Backend.md)
-- `Testing.md`
+- [Auto_Testing.md](Auto_Testing.md)
 
 ---
 

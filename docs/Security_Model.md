@@ -184,8 +184,8 @@ For example, the backend checks Article Names, storage values, prices, and wheth
 
 The exact cases are already documented and tested in:
 
-- [Testing — §2 What the 39 Backend Checks Do](Testing.md#2-what-the-39-backend-checks-do)
-- [Testing — §6 What the 50 Frontend Checks Do](Testing.md#6-what-the-50-frontend-checks-do)
+- [Auto Testing — §2 What the 39 Backend Checks Do](Auto_Testing.md#2-what-the-39-backend-checks-do)
+- [Auto Testing — §7 What the 50 Frontend Checks Do](Auto_Testing.md#7-what-the-50-frontend-checks-do)
 
 There is no need to repeat the individual validation rules here.
 
@@ -201,7 +201,7 @@ This matters because an Article Name could contain suspicious-looking text such 
 
 UnVeilmi should treat that as an Article Name, not as a database instruction.
 
-The project already explains and tests this in [Testing — §3 A Few Security Tests in Plain English](Testing.md#3-a-few-security-tests-in-plain-english).
+The project already explains and tests this in [Auto Testing — §3 A Few Security Tests in Plain English](Auto_Testing.md#3-a-few-security-tests-in-plain-english).
 
 ### CORS
 
@@ -213,7 +213,7 @@ It does **not** mean the API is authenticated.
 
 A non-browser program can still send requests directly to the backend, which is another reason server-side validation is necessary.
 
-The CORS behaviour and its automated checks are also explained in [Testing — §3 A Few Security Tests in Plain English](Testing.md#3-a-few-security-tests-in-plain-english).
+The CORS behaviour and its automated checks are also explained in [Auto Testing — §3 A Few Security Tests in Plain English](Auto_Testing.md#3-a-few-security-tests-in-plain-english).
 
 ---
 
@@ -250,7 +250,7 @@ A **threat model** is a short list of things that could go wrong and how the des
 | An expired post is requested | Expired records are cleaned during relevant backend operations. |
 | An unrelated website tries to use the local API through a browser | CORS restricts which browser origins receive permission. |
 
-The automated evidence for these behaviours is documented in [Testing — §2 What the 39 Backend Checks Do](Testing.md#2-what-the-39-backend-checks-do).
+The automated evidence for these behaviours is documented in [Auto Testing — §2 What the 39 Backend Checks Do](Auto_Testing.md#2-what-the-39-backend-checks-do).
 
 ---
 
@@ -317,7 +317,7 @@ complete anonymity
 
 Its automated tests are also development tests, not a professional security or cryptographic audit.
 
-For the specific limits of the browser test, see [Testing — §7 Frontend Test Results → What This Frontend Test Does Not Check](Testing.md#what-this-frontend-test-does-not-check).
+For the specific limits of the browser test, see [Auto Testing — §6 Frontend Test Results → What This Frontend Test Does Not Check](Auto_Testing.md#what-this-frontend-test-does-not-check).
 
 Security still depends on things outside UnVeilmi, especially:
 

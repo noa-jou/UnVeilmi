@@ -199,7 +199,7 @@ See:
 
 - [Pricing and Storage — §4 Frontend Quote and Backend Verification](Pricing_and_Storage.md#4-frontend-quote-and-backend-verification)
 - [Security Model — §4 Where the System Stops Trusting Input](Security_Model.md#4-where-the-system-stops-trusting-input)
-- [Testing — §2 What the 39 Backend Checks Do](Testing.md#2-what-the-39-backend-checks-do)
+- [Auto Testing — §2 What the 39 Backend Checks Do](Auto_Testing.md#2-what-the-39-backend-checks-do)
 
 ---
 
@@ -303,8 +303,7 @@ That is part of the design, not a missing social platform.
 See:
 
 - [Architecture — §10 What UnVeilmi Does Not Need](Architecture.md#10-what-unveilmi-does-not-need)
-- [Security Model](Security_Model.md)
-- [Testing](Testing.md)
+- [README.md - Current Limitations](## ./README.md#Current Limitations !!!)
 
 ---
 
@@ -351,6 +350,6 @@ For implementation details:
 | How is the system connected? | [Architecture](Architecture.md) |
 | Why is the security model safer? | [Security Model](Security_Model.md) |
 | How do pricing and expiry work? | [Pricing and Storage](Pricing_and_Storage.md) |
-| How is the system tested? | [Testing](Testing.md) |
-| How do I run the project? | [Backend Setup](Set_Up_Backend.md) / [Frontend Setup](Set_Up_Frontend.md) |
+| How is the system tested? | [Auto_Testing](Auto_Testing.md) |
+| How do I run the project? | [DB Setup](Set_Up_DB.md) / [Backend Setup](Set_Up_Backend.md) / [Frontend Setup](Set_Up_Frontend.md) |
 | How do I recreate the demo Easter Egg? | [Easter Egg Guide](Easter_Egg_Guide.md) |

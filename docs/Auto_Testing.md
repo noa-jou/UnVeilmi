@@ -1,4 +1,4 @@
-# Testing
+# Automated Testing
 
 UnVeilmi uses two automated development-test layers:
 
@@ -222,43 +222,16 @@ The earlier `[FAIL]` or `[ERROR]` output tells you **which test** failed and why
 
 ## 5. Automated Frontend Availability and Validation Test
 
-The frontend test file is:
-
-```text
-frontend/frontend_availability_and_validation_test.html
-```
-
-It uses the browser itself as the test environment and requires **no additional testing package**.
-
-The test page loads the real:
-
-```text
-index.html
-   +
-app.js
-```
-
-inside a same-origin test frame and interacts with the actual UnVeilmi frontend.
-
-It also communicates with the real local FastAPI backend and SQLite database during the Publish → Find integration checks.
-
 ### Run the Test
 
-Both the backend and frontend must already be running.
+Start both the backend and frontend first.
 
-For full startup instructions, see:
+For setup instructions, see:
 
 - [Backend Setup](Set_Up_Backend.md)
 - [Frontend Setup](Set_Up_Frontend.md)
 
-The expected local services are:
-
-```text
-Frontend: http://127.0.0.1:5500
-Backend:  http://127.0.0.1:8000
-```
-
-Open:
+Then open:
 
 ```text
 http://127.0.0.1:5500/frontend_availability_and_validation_test.html
@@ -266,99 +239,100 @@ http://127.0.0.1:5500/frontend_availability_and_validation_test.html
 
 The test starts automatically.
 
-To run it again, press:
+Press:
 
 ```text
 Run Test Again
 ```
 
-A run also creates a unique Suite ID, for example:
+to run it again.
 
-```text
-Suite ID: 10c35d4e1d
-```
-
-The Suite ID is included in temporary Article Names so repeated runs do not normally collide with each other.
+Each run creates a unique Suite ID so its temporary Article Name does not normally collide with another run.
 
 ### Test Data
 
-Most frontend checks only manipulate the browser state.
+Most frontend checks only change browser state.
 
-The Publish → Find integration section creates one real temporary post through the normal frontend and backend flow.
+The Publish → Find integration test creates one real temporary post in SQLite. It:
 
-That post:
-
-- uses a unique Article Name containing the Suite ID;
+- uses an Article Name beginning with `frontend-e2e-`;
 - uses `1` hour of storage;
-- remains in SQLite until normal expiry cleanup removes it.
+- remains until normal expiry cleanup removes it.
 
-Unlike the backend test suite, the frontend test does not use a special cleanup routine because UnVeilmi intentionally has no manual DELETE API.
+The test also creates synthetic, structurally valid `VEILMI1` envelopes. These are useful for checking format rules, but they are not real messages encrypted by the Veilmi Android app.
 
-The test also creates **synthetic structurally valid `VEILMI1` envelopes** for validation.
+### Optional: Remove Frontend Test Data from SQLite
 
-These test envelopes are suitable for checking the UnVeilmi frontend and backend format rules, but they are not real messages encrypted by the Veilmi Android app.
+You normally do not need to delete the test posts manually.
+
+If you run the frontend test many times and want to clean the database, open SQLite:
+
+```bash
+cd backend
+sqlite3 unveilmi.db
+```
+
+You can first inspect all frontend automated-test records:
+
+```sql
+.headers on
+.mode column
+
+SELECT id, article_name, expires_at
+FROM posts
+WHERE article_name LIKE 'frontend-e2e-%';
+```
+
+If you want to remove all of them:
+
+```sql
+DELETE FROM posts
+WHERE article_name LIKE 'frontend-e2e-%';
+```
+
+Check how many rows were deleted:
+
+```sql
+SELECT changes();
+```
+
+Then leave SQLite:
+
+```sql
+.quit
+```
+
+This only removes records whose Article Names begin with `frontend-e2e-`. It does not add a DELETE feature to the UnVeilmi API.
+
+### Why Can Another HTML File Test `index.html`?
+
+The test page does not copy the UnVeilmi interface.
+
+Instead, it opens the real `index.html` inside itself using an **iframe**:
+
+```text
+frontend_availability_and_validation_test.html
+                    ↓
+                 iframe
+                    ↓
+               index.html
+                    ↓
+                  app.js
+```
+
+You can think of an iframe as one web page displayed inside another web page.
+
+Because both pages are running from the same local website, the test page can interact directly with the real UnVeilmi page.
+
+It can enter values, click buttons, read messages, and check whether controls are enabled, disabled, visible, or hidden.
+
+So the test is exercising the real `index.html` and `app.js`, not a copied version of them.
 
 ---
 
-## 6. What the 50 Frontend Checks Do
+## 6. Frontend Test Results
 
-The current frontend test contains **50 checks** in five groups:
-
-| Group | Checks | Purpose |
-|---|---:|---|
-| Environment and page availability | 7 | Confirms the backend is reachable, the real frontend loads, required controls exist, navigation works, safe initial states are used, and HTML limits match the product rules. |
-| Article Name validation | 5 | Checks blank input, Unicode character counting, the 50-character boundary, rejection at 51 characters, and invalidation after editing a verified name. |
-| `VEILMI1` ciphertext validation | 13 | Checks malformed prefixes/payloads, JSON and required fields, version/KDF/iteration rules, salt/nonce/MAC lengths, empty ciphertext, valid envelopes, and Clear Ciphertext behaviour. |
-| Storage, pricing, and state invalidation | 15 | Checks storage limits, free-tier boundaries, byte-size display, billable cases, the 8760-hour maximum, payment confirmation, and whether editing inputs correctly invalidates old state. |
-| Publish and Find integration | 10 | Publishes a real temporary post, verifies form reset and duplicate-name behaviour, checks Find validation, retrieves the ciphertext, verifies exact matching, checks Copy-button state, and confirms old results are cleared after a failed search. |
-
-### Important Boundary Checks
-
-Some frontend checks intentionally test exact product boundaries.
-
-For example:
-
-```text
-Article Name:
-50 characters  → accepted
-51 characters  → rejected
-```
-
-```text
-Storage:
-1 hour          → accepted
-0 hours         → rejected
-8760 hours      → accepted
-8761 hours      → rejected
-```
-
-```text
-Free tier:
-≤ 1024 bytes AND ≤ 24 hours → USD 0
-otherwise                   → normal price calculation
-```
-
-The test also confirms that changing previously verified data invalidates old state.
-
-For example:
-
-```text
-Verified Article Name
-        ↓
-User edits Article Name
-        ↓
-Old verification is cleared
-        ↓
-Send becomes disabled
-```
-
-The same principle is tested for ciphertext, storage duration, and payment confirmation.
-
----
-
-## 7. Frontend Test Results
-
-Each frontend check produces either:
+Each frontend check produces:
 
 ```text
 [PASS]
@@ -376,64 +350,100 @@ A successful run ends with:
 All 50 frontend availability and validation checks passed.
 ```
 
-If one check fails, the page prints the failed check and a short explanation next to it.
-
-For example:
-
-```text
-[PASS] Exactly 50 characters are accepted by Article Name validation
-[FAIL] A 51-character Article Name is rejected
-       Expected message containing "Maximum is 50".
-[PASS] Editing a previously verified Article Name invalidates that verification
-```
-
-The test normally continues with the remaining checks so several problems can be seen in one run.
-
-The summary then shows how many checks passed or failed.
+If a check fails, the page shows which check failed and why, then normally continues with the remaining checks.
 
 ### What This Frontend Test Does Not Check
 
-The browser test deliberately does **not** claim to test everything.
+The automated browser test does not:
 
-It does not:
+- prove that a test ciphertext can really be decrypted by Veilmi;
+- fully test the system clipboard, because browser clipboard access depends on real user actions and permissions;
+- judge visual quality, readability, or how natural the interface feels to a person;
+- replace the backend security test, a professional security audit, or a cryptographic audit.
 
-- perform a professional browser-security audit;
-- perform cryptographic verification of Veilmi encryption;
-- prove that synthetic test ciphertext can be decrypted by Veilmi;
-- automatically test the system clipboard, because browser clipboard access can depend on user gestures and permissions;
-- replace the backend security test.
+For Copy actions, the automated test checks that the button becomes enabled and contains the correct value to copy.
 
-For Copy actions, it instead checks that the button becomes enabled and contains the correct value to copy.
+---
 
-A real Veilmi encrypt → UnVeilmi → Veilmi decrypt demonstration can still be performed separately when needed.
+## 7. What the 50 Frontend Checks Do
+
+| Group | Checks | Purpose |
+|---|---:|---|
+| Environment and page availability | 7 | Confirms the backend is reachable, the real frontend loads, required controls exist, navigation works, safe initial states are used, and HTML limits match the product rules. |
+| Article Name validation | 5 | Checks blank input, Unicode character counting, the 50-character boundary, rejection at 51 characters, and invalidation after editing a verified name. |
+| `VEILMI1` ciphertext validation | 13 | Checks malformed prefixes/payloads, JSON and required fields, version/KDF/iteration rules, salt/nonce/MAC lengths, empty ciphertext, valid envelopes, and Clear Ciphertext behaviour. |
+| Storage, pricing, and state invalidation | 15 | Checks storage limits, free-tier boundaries, byte-size display, billable cases, payment confirmation, and whether editing inputs correctly invalidates old state. |
+| Publish and Find integration | 10 | Publishes a real temporary post, checks duplicate-name behaviour, retrieves ciphertext by exact Article Name, checks Copy-button state, and confirms stale results are cleared after a failed search. |
+
+The 50 checks focus on repeatable behaviour that the browser can verify automatically.
 
 ---
 
 ## 8. Testing Summary
 
 ```text
-backend_availability_and_security_test.py
-        ↓
-API + backend validation + database
-+ pricing + expiry + security-related behaviour
+Backend test
+    ↓
+API + backend rules + database
 
-
-frontend_availability_and_validation_test.html
-        ↓
-Real frontend DOM + frontend validation
-+ pricing state + Publish → Find integration
+Frontend test
+    ↓
+Real index.html + app.js
++ validation + Publish → Find
 ```
 
-Together, the two suites test different responsibilities of the current UnVeilmi Proof of Concept:
+The two suites cover different parts of the same local workflow.
+
+Passing them means the behaviours covered by the tests are working as expected. It does not prove that the whole system is production-ready or completely secure.
+
+---
+
+## 9. What to Test Manually
+
+After the automated tests pass, manual testing is most useful for the things automation does **not** fully cover.
+
+### Real Veilmi Round Trip
+
+Use a real message encrypted by the Veilmi Android app:
 
 ```text
-Frontend
-   ↓
-FastAPI
-   ↓
-SQLite
+Veilmi encrypt
+      ↓
+UnVeilmi Publish
+      ↓
+UnVeilmi Find
+      ↓
+Copy Ciphertext
+      ↓
+Veilmi decrypt
 ```
 
-The backend suite verifies that server-side rules remain enforced.
+Confirm that the original plaintext returns when the same passphrase is used.
 
-The frontend suite verifies that the browser interface applies its own validation correctly and can complete the expected local workflow.
+This tests the real Veilmi → UnVeilmi → Veilmi workflow rather than a synthetic test envelope.
+
+### Real Copy and Paste
+
+Use the actual:
+
+```text
+Copy Article Name
+Copy Ciphertext
+```
+
+buttons and paste their values into the next step.
+
+The automated test can check whether those buttons contain the correct value, but browser permissions make real clipboard behaviour better suited to manual testing.
+
+### Visual and Human Experience
+
+Use the page normally and check things an automated assertion cannot judge well:
+
+- whether instructions are easy to understand;
+- whether validation messages are easy to notice and read;
+- whether the layout still works on a smaller screen;
+- whether the Publish and Find flow feels clear without reading the source code.
+
+Automated testing is best for repeatable rules.
+
+Manual testing is most valuable where a real person, a real clipboard, or a real Veilmi encryption/decryption step is required.

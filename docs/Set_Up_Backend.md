@@ -257,7 +257,7 @@ If `.venv` still exists and `requirements.txt` has not changed, that is all you 
 For the full availability, validation, database, pricing, and
 security-related test suite, see:
 
-[Testing Guide](Testing.md)
+[Auto Testing Guide](Auto_Testing.md)
 
 
 ## Run the Backend Availability and Security Test
