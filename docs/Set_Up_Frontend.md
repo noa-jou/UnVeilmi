@@ -62,29 +62,9 @@ The two ports allow the frontend and backend to run independently while still co
 
 ## 2. Start the Backend
 
-Open the first terminal.
+Start the backend before the Frontend, see [Backend Setup — §7. Starting the Backend Again Later](Set_Up_Backend.md#7-starting-the-backend-again-later)
 
-Go to the backend directory:
-
-```bash
-cd ~/UnVeilmi/backend
-```
-
-Activate the Python virtual environment:
-
-```bash
-source .venv/bin/activate
-```
-
-Start FastAPI:
-
-```bash
-uvicorn main:app --host 127.0.0.1 --port 8000 --reload
-```
-
-Keep this terminal open.
-
-The backend is now available at:
+The backend should be available at:
 
 ```text
 http://127.0.0.1:8000

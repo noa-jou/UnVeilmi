@@ -21,9 +21,6 @@ The LINE conversation includes messages such as:
 ```text
 did you get home
 yeah just got back
-did you eat yet
-not really hungry
-maybe order something
 ...
 ```
 
@@ -87,7 +84,9 @@ Then, from the `backend` directory, load the prepared demo data:
 sqlite3 unveilmi.db < demo_seed.sql
 ```
 
-The shared demo passphrase is:
+Then, you must download my [Veilmi](https://noa-jou.github.io/Veilmi/closed-testing.html) to find out what happened next.
+
+Remember, the shared demo passphrase is:
 
 ```text
 family
@@ -121,8 +120,7 @@ okay talk tonight
 For each one:
 
 ```text
-Copy LINE message
-        ↓
+
 UnVeilmi → Find
         ↓
 Copy Ciphertext
@@ -131,32 +129,8 @@ Open Veilmi
         ↓
 Paste Ciphertext
         ↓
-Passphrase: family
-        ↓
-Decrypt
+Decrypt with Passphrase: family
+
 ```
-
-The remaining plaintext is intentionally not listed here.
-
-If you want to know what Kate and Noa say next, you have to uncover it yourself.
-
----
-
-## 4. What the Demo Is Showing
-
-The Easter Egg is playful, but it demonstrates the basic UnVeilmi idea:
-
-```text
-LINE carries the locator
-        ↓
-UnVeilmi carries the ciphertext
-        ↓
-Veilmi reveals the message
-```
-
-Or, in the project's usual wording:
-
-> **Veilmi handles the secret.  
-> UnVeilmi handles the ciphertext.**
 
 Have fun finding the rest.

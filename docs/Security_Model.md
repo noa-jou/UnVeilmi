@@ -184,8 +184,8 @@ For example, the backend checks Article Names, storage values, prices, and wheth
 
 The exact cases are already documented and tested in:
 
-- [Auto Testing — §2 What the 39 Backend Checks Do](Auto_Testing.md#2-what-the-39-backend-checks-do)
-- [Auto Testing — §7 What the 50 Frontend Checks Do](Auto_Testing.md#7-what-the-50-frontend-checks-do)
+- [Auto Testing — §2 What the Backend Checks Do](Auto_Testing.md#2-what-the-backend-checks-do)
+- [Auto Testing — §7 What the Frontend Checks Do](Auto_Testing.md#7-what-the-frontend-checks-do)
 
 There is no need to repeat the individual validation rules here.
 
@@ -201,7 +201,6 @@ This matters because an Article Name could contain suspicious-looking text such 
 
 UnVeilmi should treat that as an Article Name, not as a database instruction.
 
-The project already explains and tests this in [Auto Testing — §3 A Few Security Tests in Plain English](Auto_Testing.md#3-a-few-security-tests-in-plain-english).
 
 ### CORS
 
@@ -212,8 +211,6 @@ For the local PoC, it helps control which browser origins are allowed to call th
 It does **not** mean the API is authenticated.
 
 A non-browser program can still send requests directly to the backend, which is another reason server-side validation is necessary.
-
-The CORS behaviour and its automated checks are also explained in [Auto Testing — §3 A Few Security Tests in Plain English](Auto_Testing.md#3-a-few-security-tests-in-plain-english).
 
 ---
 
@@ -329,25 +326,6 @@ the security of any future public server
 ```
 
 ---
-
-## 10. Summary
-
-The design tries to avoid putting everything valuable in one place:
-
-```text
-Veilmi
-holds plaintext + passphrase
-        ↓
-creates ciphertext
-
-
-UnVeilmi
-stores ciphertext + limited metadata
-        ↓
-does not need the passphrase
-```
-
-This means a compromise of UnVeilmi storage is still serious, but the database alone is not intended to contain everything needed to read the messages.
 
 The central rules remain:
 

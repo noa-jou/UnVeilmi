@@ -65,7 +65,7 @@ Suite ID: 10c35d4e1d
 
 ---
 
-## 2. What the 39 Backend Checks Do
+## 2. What the Backend Checks Do
 
 | # | Check | Purpose |
 |---:|---|---|
@@ -109,43 +109,10 @@ Suite ID: 10c35d4e1d
 | 38 | Expired post cleanup during name check | Confirms expiry cleanup makes the Article Name available again. |
 | 39 | Reuse expired Article Name | Confirms a new post can reuse a name after the old record expires. |
 
----
+For why these tests matter, see [Security Model — §5. Validation, SQL Safety, and CORS](Security_Model.md#5-validation-sql-safety-and-cors)
 
-## 3. A Few Security Tests in Plain English
 
-### CORS
-
-CORS controls which browser origins are allowed to call the backend.
-
-For the local PoC, the intended frontend is allowed while unrelated origins should not receive that permission.
-
-### SQL-Injection-Style Input
-
-The test uses an Article Name containing text similar to:
-
-```text
-' OR 1=1 --
-```
-
-The goal is not to damage the database.
-
-It confirms that parameterized SQLite queries treat this value as ordinary text rather than executable SQL.
-
-### Malformed Veilmi Messages
-
-A string beginning with:
-
-```text
-VEILMI1:
-```
-
-is not automatically accepted.
-
-The backend also checks the expected Veilmi envelope fields and sizes.
-
----
-
-## 4. Backend Test Results
+## 3. Backend Test Results
 
 Each check produces:
 
@@ -220,7 +187,7 @@ The earlier `[FAIL]` or `[ERROR]` output tells you **which test** failed and why
 
 ---
 
-## 5. Automated Frontend Availability and Validation Test
+## 4. Automated Frontend Availability and Validation Test
 
 ### Run the Test
 
@@ -330,7 +297,7 @@ So the test is exercising the real `index.html` and `app.js`, not a copied versi
 
 ---
 
-## 6. Frontend Test Results
+## 5. Frontend Test Results
 
 Each frontend check produces:
 
@@ -352,20 +319,8 @@ All 50 frontend availability and validation checks passed.
 
 If a check fails, the page shows which check failed and why, then normally continues with the remaining checks.
 
-### What This Frontend Test Does Not Check
 
-The automated browser test does not:
-
-- prove that a test ciphertext can really be decrypted by Veilmi;
-- fully test the system clipboard, because browser clipboard access depends on real user actions and permissions;
-- judge visual quality, readability, or how natural the interface feels to a person;
-- replace the backend security test, a professional security audit, or a cryptographic audit.
-
-For Copy actions, the automated test checks that the button becomes enabled and contains the correct value to copy.
-
----
-
-## 7. What the 50 Frontend Checks Do
+## 6. What the Frontend Checks Do
 
 | Group | Checks | Purpose |
 |---|---:|---|
@@ -377,50 +332,23 @@ For Copy actions, the automated test checks that the button becomes enabled and 
 
 The 50 checks focus on repeatable behaviour that the browser can verify automatically.
 
----
-
-## 8. Testing Summary
-
-```text
-Backend test
-    ↓
-API + backend rules + database
-
-Frontend test
-    ↓
-Real index.html + app.js
-+ validation + Publish → Find
-```
-
-The two suites cover different parts of the same local workflow.
-
-Passing them means the behaviours covered by the tests are working as expected. It does not prove that the whole system is production-ready or completely secure.
 
 ---
 
-## 9. What to Test Manually
+## 7. What to Test Manually
 
 After the automated tests pass, manual testing is most useful for the things automation does **not** fully cover.
 
-### Real Veilmi Round Trip
+### What This Frontend Test Does Not Check
 
-Use a real message encrypted by the Veilmi Android app:
+The automated browser test does not:
 
-```text
-Veilmi encrypt
-      ↓
-UnVeilmi Publish
-      ↓
-UnVeilmi Find
-      ↓
-Copy Ciphertext
-      ↓
-Veilmi decrypt
-```
+- prove that a test ciphertext can really be decrypted by Veilmi;
+- fully test the system clipboard, because browser clipboard access depends on real user actions and permissions;
+- judge visual quality, readability, or how natural the interface feels to a person;
+- replace the backend security test, a professional security audit, or a cryptographic audit.
 
-Confirm that the original plaintext returns when the same passphrase is used.
-
-This tests the real Veilmi → UnVeilmi → Veilmi workflow rather than a synthetic test envelope.
+For Copy actions, the automated test checks that the button becomes enabled and contains the correct value to copy.
 
 ### Real Copy and Paste
 
@@ -447,3 +375,45 @@ Use the page normally and check things an automated assertion cannot judge well:
 Automated testing is best for repeatable rules.
 
 Manual testing is most valuable where a real person, a real clipboard, or a real Veilmi encryption/decryption step is required.
+
+### Real Veilmi Round Trip
+
+Use a real message encrypted by the Veilmi Android app:
+
+```text
+Veilmi encrypt
+      ↓
+UnVeilmi Publish
+      ↓
+UnVeilmi Find
+      ↓
+Copy Ciphertext
+      ↓
+Veilmi decrypt
+```
+
+Confirm that the original plaintext returns when the same passphrase is used.
+
+This tests the real Veilmi → UnVeilmi → Veilmi workflow rather than a synthetic test envelope.
+
+
+---
+
+## 8. Testing Summary
+
+```text
+Backend test
+    ↓
+API + backend rules + database
+
+Frontend test
+    ↓
+Real index.html + app.js
++ validation + Publish → Find
+```
+
+The two suites cover different parts of the same local workflow.
+
+Passing them means the behaviours covered by the tests are working as expected. It does not prove that the whole system is production-ready or completely secure.
+
+

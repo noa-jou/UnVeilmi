@@ -2,7 +2,7 @@
 
 This document explains **why UnVeilmi is designed this way**.
 
-The main README should stay easy to scan. Detailed setup, architecture, testing, and security explanations live in their own documents.
+It intentionally avoids repeating implementation details. For exact system behaviour, setup steps, security rules, pricing, and testing, follow the linked documents in each section.
 
 ---
 
@@ -10,29 +10,17 @@ The main README should stay easy to scan. Detailed setup, architecture, testing,
 
 ### Decision
 
-Veilmi stays focused on local encryption and decryption.
-
-UnVeilmi is a separate service for temporary ciphertext storage and retrieval.
-
-```text
-Veilmi
-handles the secret
-
-UnVeilmi
-handles the ciphertext
-```
+Veilmi handles local encryption and decryption. UnVeilmi remains a separate service for temporary ciphertext storage and retrieval.
 
 ### Why
 
-Keeping the two responsibilities separate preserves an important property of Veilmi:
+Keeping them separate preserves an important property of Veilmi: it does not need a network connection to encrypt or decrypt.
 
-> Veilmi does not need a network connection to encrypt or decrypt.
-
-UnVeilmi can change, fail, or never be publicly deployed, while Veilmi still works on its own.
+It also means Veilmi can continue to work even if UnVeilmi changes, fails, or is never publicly deployed.
 
 ### Trade-off
 
-The user has to move ciphertext between two tools, but the security boundary stays much clearer.
+Users must move ciphertext between two tools, but the boundary between secret handling and network storage stays clearer.
 
 See:
 
@@ -45,31 +33,17 @@ See:
 
 ### Decision
 
-The Article Name is only used to find ciphertext.
-
-It is **not a password**.
-
-```text
-Article Name
-     ↓
-find ciphertext
-
-Passphrase
-     ↓
-unlock plaintext
-```
+The Article Name is used to find ciphertext. It is not a password or decryption secret.
 
 ### Why
 
-This keeps the system easy to understand and avoids mixing two different jobs.
+A locator and a secret have different jobs. Keeping those jobs separate makes the system easier to understand and avoids treating the Article Name as part of the confidentiality model.
 
-Because the Article Name is not part of the confidentiality model, the current PoC stores it directly instead of hashing it.
+For the same reason, the current PoC stores Article Names directly rather than hashing them.
 
 ### Trade-off
 
-Someone who guesses an active Article Name may be able to retrieve its ciphertext.
-
-That is acceptable because the ciphertext should still require the Veilmi secret before it becomes readable plaintext.
+Someone who knows or guesses an active Article Name may retrieve its ciphertext. Protecting the plaintext still depends on the Veilmi secret.
 
 See:
 
@@ -82,29 +56,17 @@ See:
 
 ### Decision
 
-The current PoC has no:
-
-```text
-accounts
-email registration
-profiles
-password recovery
-personal post history
-```
+The current PoC does not use user accounts, profiles, email registration, password recovery, or personal post history.
 
 ### Why
 
-UnVeilmi is not trying to become a social network or full messaging platform.
+Those features would introduce identity data, authentication, recovery flows, and authorization rules that are not required to demonstrate the core idea.
 
-Accounts would add identity data, password handling, recovery flows, and authorization rules that are not needed for the core idea.
-
-The project only needs to prove that ciphertext can be stored temporarily and retrieved later without giving the server the plaintext or Veilmi passphrase.
+UnVeilmi only needs to show that Veilmi ciphertext can be stored temporarily and retrieved later without giving the storage service the plaintext or Veilmi passphrase.
 
 ### Trade-off
 
-There is no account-based history or recovery system.
-
-Users must keep track of the Article Names they choose to share.
+There is no account-based history or recovery system. Users must keep track of the Article Names they choose to share.
 
 See:
 
@@ -113,41 +75,21 @@ See:
 
 ---
 
-## 4. Why Temporary Storage?
+## 4. Why Temporary Storage Instead of Permanent Storage?
 
 ### Decision
 
-Posts expire instead of becoming permanent cloud storage.
+Posts expire instead of becoming permanent cloud storage. The current PoC also does not provide manual deletion.
 
 ### Why
 
-The intended flow is small:
+Temporary storage fits the intended purpose of UnVeilmi: store ciphertext long enough for retrieval, then let it leave the active database.
 
-```text
-publish
-   ↓
-retrieve
-   ↓
-expire
-```
-
-Temporary storage limits how long old ciphertext and metadata are intended to remain active.
-
-The current PoC uses **lazy cleanup**, so expired records are removed during normal backend activity rather than by a separate background service.
-
-### Why No Manual Delete?
-
-A manual-delete feature would create another question:
-
-> Who is allowed to delete the post?
-
-Without accounts, that would require another ownership mechanism such as a deletion token.
-
-For this PoC, automatic expiry keeps the design simpler.
+A manual-delete feature would also require some way to decide who is allowed to delete a post. Without accounts, that would introduce another ownership mechanism that the current PoC does not need.
 
 ### Trade-off
 
-Expired records are cleaned during relevant backend activity, not exactly at the expiry second.
+The current design uses lazy cleanup, so an expired record may remain until relevant backend activity triggers its removal rather than disappearing exactly at the expiry second.
 
 See:
 
@@ -160,74 +102,41 @@ See:
 
 ### Decision
 
-The frontend can validate inputs and calculate a quote, but the backend checks important rules again.
+The frontend provides validation and price feedback, but the backend checks important rules again before accepting a request.
 
 ### Why
 
-The browser belongs to the user.
+The browser is controlled by the user. Frontend JavaScript and form values can be modified, and the API can be called without using the normal interface.
 
-A user can:
-
-```text
-edit JavaScript
-change form values
-use developer tools
-call the API directly
-```
-
-So frontend checks are useful for user experience, but they cannot be the final authority.
-
-For example:
-
-```text
-Frontend calculates price
-        ↓
-Backend recalculates price
-        ↓
-Mismatch?
-        ↓
-Reject
-```
+Frontend validation therefore improves user experience, but it cannot be the final authority for server-side rules.
 
 ### Trade-off
 
-Some validation logic exists in both frontend and backend.
-
-That duplication is intentional because the two layers have different responsibilities.
+Some validation logic exists in both frontend and backend. That duplication is intentional because the two layers have different responsibilities.
 
 See:
 
-- [Pricing and Storage — §4 Frontend Quote and Backend Verification](Pricing_and_Storage.md#4-frontend-quote-and-backend-verification)
 - [Security Model — §4 Where the System Stops Trusting Input](Security_Model.md#4-where-the-system-stops-trusting-input)
-- [Auto Testing — §2 What the 39 Backend Checks Do](Auto_Testing.md#2-what-the-39-backend-checks-do)
+- [Pricing and Storage — §4 Frontend Quote and Backend Verification](Pricing_and_Storage.md#4-frontend-quote-and-backend-verification)
+- [Auto Testing — §2 What the Backend Checks Do](Auto_Testing.md#2-what-the-backend-checks-do)
 
 ---
 
-## 6. Why Simulate Payment?
+## 6. Why Simulate Payment Instead of Processing Real Money?
 
 ### Decision
 
-The PoC calculates a demonstration price but does not process real money.
+The PoC calculates a demonstration price but does not process real payments.
 
 ### Why
 
-The goal is to demonstrate a resource-based storage model:
+Pricing is included to demonstrate a possible storage model based on ciphertext size and storage duration.
 
-```text
-ciphertext size
-      ×
-storage duration
-      ↓
-estimated price
-```
-
-Real payments would add unrelated work such as billing accounts, refunds, financial records, tax handling, and payment-provider integration.
-
-None of that is required to prove the storage idea.
+Real payment processing would add billing accounts, refunds, financial records, tax handling, and payment-provider integration. None of those are required to demonstrate the storage design.
 
 ### Trade-off
 
-The PoC demonstrates pricing behaviour, not a real commercial transaction.
+The current project can demonstrate pricing behaviour, but not a real commercial transaction.
 
 See:
 
@@ -240,34 +149,23 @@ See:
 
 ### Decision
 
-The current backend runs locally on the developer's computer.
+The current UnVeilmi backend and frontend run locally on the developer's computer.
 
 ### Why
 
-The first goal is to prove the architecture, not to operate a public service.
+The first goal is to prove that the architecture and workflow work together.
 
-A local environment is enough to demonstrate:
-
-```text
-Browser
-   ↓
-Frontend
-   ↓
-FastAPI
-   ↓
-SQLite
-```
-
-without immediately adding cloud hosting, domains, HTTPS certificates, monitoring, or public abuse handling.
+A local environment is enough to demonstrate the frontend, backend, database, validation, storage, retrieval, and expiry behaviour without first adding production infrastructure.
 
 ### Trade-off
 
-The project demonstrates architecture and security design, not production readiness.
+The project demonstrates the design, not production readiness. A real public deployment would require additional infrastructure and security work.
 
 See:
 
 - [Architecture — §9 Local Development Environment](Architecture.md#9-local-development-environment)
 - [Security Model — §9 Current PoC Limits](Security_Model.md#9-current-poc-limits)
+- [README.md — § Current Limitations](../README.md#current-limitations)
 
 ---
 
@@ -281,29 +179,18 @@ UnVeilmi focuses on one job:
 
 ### Why
 
-Every extra feature creates another thing that must be designed, secured, tested, and maintained.
+Every additional feature creates something else that must be designed, secured, tested, and maintained.
 
-Features such as accounts, files, comments, permanent history, and real payments would expand the project far beyond the core experiment.
-
-A small PoC keeps the important questions visible:
-
-```text
-Can the server store ciphertext without needing plaintext?
-Can another user retrieve it by Article Name?
-Can the backend enforce its own rules?
-Can expired data leave the active database?
-```
+Keeping the PoC small makes it easier to evaluate the core questions: whether ciphertext can be stored without plaintext, retrieved by Article Name, protected by backend-enforced rules, and removed from the active database after expiry.
 
 ### Trade-off
 
-UnVeilmi intentionally does less than a full messaging service.
-
-That is part of the design, not a missing social platform.
+UnVeilmi intentionally does less than a full messaging or social platform. That narrower scope is part of the design.
 
 See:
 
 - [Architecture — §10 What UnVeilmi Does Not Need](Architecture.md#10-what-unveilmi-does-not-need)
-- [README.md - Current Limitations](## ./README.md#Current Limitations !!!)
+- [README.md — § Current Limitations](../README.md#current-limitations)
 
 ---
 
@@ -315,41 +202,12 @@ UnVeilmi uses the GNU Affero General Public License v3.0.
 
 ### Why
 
-UnVeilmi is network-oriented software.
+UnVeilmi is network-oriented software. AGPL-3.0 fits the project's goal of allowing people to study, modify, and deploy it while requiring source availability in situations covered by the license, including certain modified network-hosted versions.
 
-AGPL-3.0 fits the goal of allowing people to study, modify, and deploy the project while encouraging modified network-hosted versions to keep their source available to the community.
+### Trade-off
 
----
+Anyone adapting or deploying the project needs to understand and follow the license obligations that apply to their use.
 
-## 10. Overall Design Principle
+See:
 
-Most decisions in UnVeilmi come from the same rule:
-
-> **Do the smallest thing necessary to demonstrate the idea clearly.**
-
-That leads to:
-
-```text
-local encryption
-      ↓
-temporary ciphertext storage
-      ↓
-simple Article Name lookup
-      ↓
-no account system
-      ↓
-backend-enforced rules
-      ↓
-automatic expiry
-```
-
-For implementation details:
-
-| Question | Document |
-|---|---|
-| How is the system connected? | [Architecture](Architecture.md) |
-| Why is the security model safer? | [Security Model](Security_Model.md) |
-| How do pricing and expiry work? | [Pricing and Storage](Pricing_and_Storage.md) |
-| How is the system tested? | [Auto_Testing](Auto_Testing.md) |
-| How do I run the project? | [DB Setup](Set_Up_DB.md) / [Backend Setup](Set_Up_Backend.md) / [Frontend Setup](Set_Up_Frontend.md) |
-| How do I recreate the demo Easter Egg? | [Easter Egg Guide](Easter_Egg_Guide.md) |
+- [LICENSE](../LICENSE)

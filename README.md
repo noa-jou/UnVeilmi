@@ -283,7 +283,7 @@ For the full architecture, see: [Architecture](docs/Architecture.md)
 
 ### 4. Run the Tests
 
-[Testing](docs/Testing.md)
+[Auto Testing](docs/Auto_Testing.md)
 
 ### 5. Try It Yourself Manually
 
@@ -300,7 +300,7 @@ After completing steps 1–4, just open a browser and play with:
 | [Architecture](docs/Architecture.md) | Components, Publish / Find flow, backend, database, trust boundaries, and local environment |
 | [Security Model](docs/Security_Model.md) | Threat model, why the separation is safer, validation, CORS, metadata, and limitations |
 | [Pricing and Storage](docs/Pricing_and_Storage.md) | Free tier, pricing formula, storage duration, expiry, cleanup, and Article Name reuse |
-| [Testing](docs/Testing.md) | Automated backend and frontend development tests |
+| [Auto Testing](docs/Auto_Testing.md) | Automated backend and frontend development tests |
 | [Database Setup](docs/Set_Up_DB.md) | Create, inspect, and test the SQLite database |
 | [Backend Setup](docs/Set_Up_Backend.md) | Install dependencies and run the FastAPI backend |
 | [Frontend Setup](docs/Set_Up_Frontend.md) | Run the local web frontend and connect it to the backend |
@@ -309,7 +309,7 @@ After completing steps 1–4, just open a browser and play with:
 
 ---
 
-## Current Limitations !!!
+## Current Limitations
 
 The current version is a local Proof of Concept.
 
