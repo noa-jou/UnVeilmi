@@ -45,13 +45,6 @@ jobs:
         uses: lycheeverse/lychee-action@v2
         with:
           args: --include-fragments --exclude-loopback --exclude '^https://github\.com/user-attachments/assets/' './**/*.md'
-
-      - name: Lint Markdown
-        uses: DavidAnson/markdownlint-cli2-action@v24
-        with:
-          globs: |
-            README.md
-            docs/**/*.md
 EOF
 ```
 Check the file exit:
@@ -81,13 +74,6 @@ jobs:
         uses: lycheeverse/lychee-action@v2
         with:
           args: --include-fragments --exclude-loopback --exclude '^https://github\.com/user-attachments/assets/' './**/*.md'
-
-      - name: Lint Markdown
-        uses: DavidAnson/markdownlint-cli2-action@v24
-        with:
-          globs: |
-            README.md
-            docs/**/*.md
 ```
 
 The important part for heading links is:
