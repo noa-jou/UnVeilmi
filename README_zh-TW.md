@@ -267,8 +267,6 @@ UnVeilmi 是刻意避免把自己變成完整的社群網路或即時通訊平�
 | 前端 | HTML / CSS / JavaScript |
 | 後端 | Python / FastAPI |
 | 資料庫 | SQLite |
-| 環境 | 本機 Debian 環境 |
-| 儲存 | 暫時儲存密文 |
 | 付款 | 僅模擬 |
 | 部署 | 僅限本機 |
 | 帳號 | 無 |

@@ -267,8 +267,6 @@ UnVeilmi intentionally avoids becoming a full social network or messaging platfo
 | Frontend | HTML / CSS / JavaScript |
 | Backend | Python / FastAPI |
 | Database | SQLite |
-| Environment | Local Debian environment |
-| Storage | Temporary ciphertext storage |
 | Payment | Simulation only |
 | Deployment | Local only |
 | Accounts | None |

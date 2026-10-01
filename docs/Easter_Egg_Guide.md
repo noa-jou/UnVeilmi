@@ -1,5 +1,6 @@
 # Easter Egg from the Demo Video
 
+
 If you watched the README demo and only half remember what happened, here is the short version.
 
 Kate and Noa look like they are having a completely ordinary LINE conversation.

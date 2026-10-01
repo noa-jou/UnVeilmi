@@ -1,5 +1,6 @@
 # Design Decisions
 
+
 This document explains **why UnVeilmi is designed this way**.
 
 It intentionally avoids repeating implementation details. For exact system behaviour, setup steps, security rules, pricing, and testing, follow the linked documents in each section.

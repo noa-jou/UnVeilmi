@@ -13,6 +13,7 @@ For the wider system structure, see [Architecture](Architecture.md).
 
 ## 1. Storage Duration
 
+
 A post may be stored for:
 
 ```text
