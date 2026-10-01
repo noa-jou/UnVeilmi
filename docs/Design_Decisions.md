@@ -190,7 +190,7 @@ UnVeilmi intentionally does less than a full messaging or social platform. That 
 See:
 
 - [Architecture — §10 What UnVeilmi Does Not Need](Architecture.md#10-what-unveilmi-does-not-need)
-- [README.md — § Current Limitations](../README.md#current-limitations)
+- [README.md — § PoC Limitations](../README.md#poc-limitations)
 
 ---
 
