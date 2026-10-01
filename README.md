@@ -52,29 +52,16 @@ The goal is to make encrypted communication less visually obvious by not placing
 
 ---
 
-## Demo
+## Demo                                                                                                
+https://github.com/user-attachments/assets/915d369c-38eb-4753-a362-70306c49f0ac    
 
-<!--
-DEMO VIDEO PLACEHOLDER
-
-Replace this block after the demo video is recorded.
-
-Suggested caption:
-
-"An ordinary LINE conversation hides a second conversation.
-Each visible LINE message is also an UnVeilmi Article Name."
--->
-
-The demo follows a LINE conversation between **Kate** and **Noa**.
+The demo follows a LINE conversation between **Kate** and **Noa**. 
 
 At first, it looks completely ordinary:
 
 ```text
-Kate: did you get home
-Noa: yeah just got back
-
-Kate: did you eat yet
-Noa: not really hungry
+Noa: did you get home
+Kate: yeah just got back
 ```
 
 But each visible message is also an UnVeilmi **Article Name**.
@@ -94,7 +81,7 @@ That ciphertext is copied into Veilmi and decrypted with the shared demo passphr
 The hidden message is:
 
 ```text
-I won the lottery!
+I(Noa) won the lottery!
 ```
 
 The next visible LINE message:
@@ -103,7 +90,7 @@ The next visible LINE message:
 yeah just got back
 ```
 
-reveals:
+reveals (Kate said):
 
 ```text
 Wait. Seriously? How much did you win?
@@ -378,6 +365,8 @@ If UnVeilmi makes you curious, please take a look at [Veilmi](https://github.com
 ### What I learn unexpectedly:
 
 [GitHub_Actions_Docs_Check_Learning_Note](docs/GitHub_Actions_Docs_Check_Learning_Note.md)
+
+[How_to_Prepare_and_Add_a_Video_to_README](docs/How_to_Prepare_and_Add_a_Video_to_README.md)
 
 ### If you want to support me on more creation:
 
