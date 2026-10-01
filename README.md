@@ -248,9 +248,7 @@ UnVeilmi: stores the ciphertext
 Veilmi: handles the real message
 ```
 
-A private deployment could run on an organization's own server rather than relying on a public UnVeilmi service.
-
-For production deployment, additional work would still be needed, including HTTPS, rate limiting, monitoring, abuse controls, and infrastructure hardening.
+A private deployment could run on an organization's own server, but for production deployment, additional work would still be needed, including HTTPS, rate limiting, monitoring, abuse controls, and infrastructure hardening.
 
 For the reasoning behind the current PoC design choices, see:
 
