@@ -118,6 +118,20 @@ header h1 {
    "Un" uses the warm Veilmi family accent.
 */
 
+.brand-title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.2em;
+}
+
+.brand-icon {
+    width: 1em;
+    height: 1em;
+    object-fit: cover;
+    border-radius: 22%;
+}
+
 .brand-un {
     color: var(--gold);
 }

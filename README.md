@@ -1,10 +1,25 @@
 # UnVeilmi
 
-> **Hide the ciphertext somewhere else.  
+> **Hide the Veilmi ciphertext somewhere else.  
 > Let the everyday conversation carry only the clue.**
+<p align="center">
+  <a href="https://github.com/noa-jou/Veilmi">
+    <img src="docs/images/veilmi_icon.png"
+         width="100"
+         height="100"
+         alt="Veilmi icon">
+  </a>
+</p>
 
 > **Veilmi handles the secret.  
-> UnVeilmi handles the ciphertext storage.**
+> UnVeilmi handles the Veilmi ciphertext storage.**
+
+<p align="center">
+  <img src="docs/images/UnVeilmi.png"
+       width="100"
+       height="100"
+       alt="UnVeilmi icon">
+</p>
 
 UnVeilmi is a Proof of Concept for a different kind of encrypted communication workflow.
 
@@ -347,6 +362,8 @@ See the repository [LICENSE](LICENSE) file for the full license text.
 ## Author
 
 **Noa Jou**
+
+(with the help of ChatGPT)
 
 UnVeilmi is a companion project to Veilmi.
 
