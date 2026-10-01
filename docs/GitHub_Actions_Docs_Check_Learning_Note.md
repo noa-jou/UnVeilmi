@@ -44,7 +44,7 @@ jobs:
       - name: Check Markdown links
         uses: lycheeverse/lychee-action@v2
         with:
-          args: --include-fragments './**/*.md'
+          args: --include-fragments --exclude-loopback './**/*.md'
 
       - name: Lint Markdown
         uses: DavidAnson/markdownlint-cli2-action@v24
@@ -80,7 +80,7 @@ jobs:
       - name: Check Markdown links
         uses: lycheeverse/lychee-action@v2
         with:
-          args: --include-fragments './**/*.md'
+          args: --include-fragments --exclude-loopback './**/*.md'
 
       - name: Lint Markdown
         uses: DavidAnson/markdownlint-cli2-action@v24
