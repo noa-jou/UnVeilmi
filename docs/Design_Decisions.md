@@ -165,7 +165,7 @@ See:
 
 - [Architecture — §9 Local Development Environment](Architecture.md#9-local-development-environment)
 - [Security Model — §9 Current PoC Limits](Security_Model.md#9-current-poc-limits)
-- [README.md — § Current Limitations](../README.md#current-limitations)
+- [README.md — § PoC Limitations](../README.md#poc-limitations)
 
 ---
 

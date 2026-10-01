@@ -1,7 +1,10 @@
 # UnVeilmi
 
+[中文](README_zh-TW.md)
+
 > **Hide the Veilmi ciphertext somewhere else.  
 > Let the everyday conversation carry only the clue.**
+
 <p align="center">
   <a href="https://github.com/noa-jou/Veilmi">
     <img src="docs/images/veilmi_icon.png"
@@ -11,8 +14,8 @@
   </a>
 </p>
 
-> **Veilmi handles the secret.  
-> UnVeilmi handles the Veilmi ciphertext storage.**
+> **Veilmi handles encryption and decryption.  
+> UnVeilmi handles Veilmi ciphertext storage.**
 
 <p align="center">
   <img src="docs/images/UnVeilmi.png"
@@ -30,21 +33,19 @@ UnVeilmi separates those two things.
 The everyday chat carries only a short **Article Name**—or, you could say, the clue.
 
 ```text
-Visible conversation
+Visible everyday conversation
 "did you get home"
         ↓
 Article Name (clue)
         ↓
-UnVeilmi (Find)
+UnVeilmi (Find) retrieves the ciphertext
         ↓
-VEILMI1 ciphertext
+Veilmi (Decrypt) decrypts it
         ↓
-Veilmi (Decrypt)
-        ↓
-Hidden plaintext
+The real message
 ```
 
-UnVeilmi stores and finds the ciphertext.
+UnVeilmi stores and retrieves the ciphertext.
 
 Veilmi encrypts and decrypts it locally.
 
@@ -52,10 +53,11 @@ The goal is to make encrypted communication less visually obvious by not placing
 
 ---
 
-## Demo                                                                                                
-https://github.com/user-attachments/assets/915d369c-38eb-4753-a362-70306c49f0ac    
+## Demo
 
-The demo follows a LINE conversation between **Kate** and **Noa**. 
+https://github.com/user-attachments/assets/915d369c-38eb-4753-a362-70306c49f0ac
+
+The demo follows a LINE conversation between **Noa** and **Kate**.
 
 At first, it looks completely ordinary:
 
@@ -81,7 +83,7 @@ That ciphertext is copied into Veilmi and decrypted with the shared demo passphr
 The hidden message is:
 
 ```text
-I(Noa) won the lottery!
+I (Noa) won the lottery!
 ```
 
 The next visible LINE message:
@@ -90,7 +92,7 @@ The next visible LINE message:
 yeah just got back
 ```
 
-reveals (Kate said):
+reveals Kate's reply:
 
 ```text
 Wait. Seriously? How much did you win?
@@ -121,7 +123,7 @@ Plaintext + passphrase
         ↓
       Veilmi
         ↓
-  VEILMI1 ciphertext
+   VEILMI1 ciphertext
         ↓
      UnVeilmi
 ```
@@ -130,7 +132,7 @@ The UnVeilmi server does not need the plaintext or Veilmi passphrase.
 
 This is one of the most important design boundaries in the project.
 
-If you want to try the demo or use the workflow yourself, start with [Get Veilmi](https://noa-jou.github.io/Veilmi/closed-testing.html)
+If you want to try the demo or use the workflow yourself, start with [Get Veilmi](https://noa-jou.github.io/Veilmi/closed-testing.html).
 
 ---
 
@@ -161,13 +163,13 @@ Receive Article Name
         ↓
 Open UnVeilmi
         ↓
-Find ciphertext
+Retrieve ciphertext
         ↓
 Copy ciphertext
         ↓
 Open Veilmi
         ↓
-Enter shared passphrase
+Enter the shared passphrase
         ↓
 Decrypt locally
 ```
@@ -184,40 +186,47 @@ UnVeilmi is currently a local Proof of Concept.
 
 But the idea is intentionally broader.
 
-A future public instance could allow people who need this communication pattern to use UnVeilmi without running their own server.
+A future public UnVeilmi service could allow people who need this communication pattern to use it without running their own server.
 
-A team or organization could also adapt the project and host its own version on infrastructure it controls.
+A team or organization could also adapt the project and deploy its own version on infrastructure it controls.
 
 For example, an internal deployment could look like:
 
 ```text
 Existing workplace chat
         ↓
-send short Article Name (clue)
+Send a short Article Name (clue)
 
 --
 
-Organization-hosted UnVeilmi
+Organization-operated UnVeilmi
         ↓
-temporary ciphertext storage that can be accessed by each intended user
+Temporarily store ciphertext so intended users can retrieve it
 
 --
 
 Veilmi on each user's device
         ↓
-local decryption
+Decrypt locally
 ```
 
-That could be useful when people need to exchange legitimate sensitive text while keeping the visible conversation channel simple and ordinary.
+> Sorry, but the US$99 annual Apple Developer Program fee is still a little too expensive for me right now, so there is no iOS version yet.  
+> [Veilmi](https://github.com/noa-jou/Veilmi) is built with Flutter and is open source. If you are interested, you are very welcome to fork the project and try bringing it to iOS or other platforms.
 
-Examples might include:
+---
+
+## Why UnVeilmi Matters
+
+This approach may be useful when people need to exchange legitimate sensitive text while keeping the visible conversation channel simple and ordinary.
+
+For example:
 
 - an internal team discussing a private draft;
 - a small organization separating sensitive notes from normal chat history;
 - a research group testing privacy-preserving communication workflows;
-- a self-hosted environment where the organization wants control of its own ciphertext storage.
+- an organization that wants to control its own ciphertext storage by operating its own environment.
 
-UnVeilmi is not currently a production service, and any real deployment would still need proper infrastructure, policy, security, and legal review.
+UnVeilmi is not currently a production service. Any real deployment would still need proper infrastructure, policy, security, and legal review.
 
 But the PoC is meant to show that the communication model itself can work.
 
@@ -225,29 +234,29 @@ But the PoC is meant to show that the communication model itself can work.
 
 ## Self-Hosting Vision
 
-UnVeilmi is especially interesting as a project that can be adapted.
+UnVeilmi is designed to be modified and extended.
 
-A developer, small team, or organization could fork the project and change things such as the hostname, storage rules, retention period, etc.
+A developer, small team, or organization can fork the project and change things such as the hostname, storage rules, retention period, and more.
 
-while keeping the central idea:
+While keeping the central idea:
 
 ```text
-Everyday channel: carries the locator / clue / Article Name
+Everyday communication channel: carries the locator / clue / Article Name
 
-UnVeilmi: carries the ciphertext
+UnVeilmi: stores the ciphertext
 
 Veilmi: handles the real message
 ```
 
-A private deployment could run on an organization's own server rather than a public UnVeilmi instance.
+A private deployment could run on an organization's own server rather than relying on a public UnVeilmi service.
 
-However, the current repository is only a local PoC, so production deployment still requires additional work such as HTTPS, rate limiting, monitoring, abuse controls, and infrastructure hardening.
+For production deployment, additional work would still be needed, including HTTPS, rate limiting, monitoring, abuse controls, and infrastructure hardening.
 
-For the reasoning behind the current choices, see:
+For the reasoning behind the current PoC design choices, see:
+
 [Design Decisions — §7 Why Is the Current PoC Local?](docs/Design_Decisions.md#7-why-is-the-current-poc-local)
 
 UnVeilmi intentionally avoids becoming a full social network or messaging platform.
-
 
 ---
 
@@ -265,7 +274,6 @@ UnVeilmi intentionally avoids becoming a full social network or messaging platfo
 | Accounts | None |
 
 For the full architecture, see: [Architecture](docs/Architecture.md)
-
 
 ---
 
@@ -295,7 +303,7 @@ After completing steps 1–4, just open a browser and play with:
 
 ---
 
-## Full Documentation List (if you really want to know more)
+## Full Documentation List
 
 | Document | What it explains |
 |---|---|
@@ -311,11 +319,9 @@ After completing steps 1–4, just open a browser and play with:
 
 ---
 
-## Current Limitations
+## PoC Limitations
 
-The current version is a local Proof of Concept.
-
-It does not currently provide:
+I do not currently provide:
 
 - a public UnVeilmi service;
 - production HTTPS deployment;
@@ -352,22 +358,26 @@ See the repository [LICENSE](LICENSE) file for the full license text.
 
 (with the help of ChatGPT)
 
-UnVeilmi is a companion project to Veilmi.
+UnVeilmi is a companion project to [Veilmi](https://github.com/noa-jou/Veilmi).
 
-I hope this project can eventually become more than a local demonstration:
+I hope this project can eventually become more than a local demo, and instead:
 
-- a public service for people who need this communication pattern;
-- a self-hosted tool for teams that want to adapt it;
-- or an idea that another developer takes further.
+- become a public service for people who need this communication pattern;
+- become a self-hosted tool that teams can modify and deploy themselves;
+- or become an idea that another developer takes further.
 
 If UnVeilmi makes you curious, please take a look at [Veilmi](https://github.com/noa-jou/Veilmi) too.
 
-### What I learn unexpectedly:
+---
+
+### Things I Unexpectedly Learned While Developing
 
 [GitHub_Actions_Docs_Check_Learning_Note](docs/GitHub_Actions_Docs_Check_Learning_Note.md)
 
 [How_to_Prepare_and_Add_a_Video_to_README](docs/How_to_Prepare_and_Add_a_Video_to_README.md)
 
-### If you want to support me on more creation:
+---
+
+### If You Want to Support More of My Creation:
 
 [Buy me a coffee](https://buymeacoffee.com/noajou)
