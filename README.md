@@ -13,6 +13,10 @@
          alt="Veilmi icon">
   </a>
 </p>
+<p align="center">
+  Clicking this icon will take you to Veilmi, this project's twin.
+</p>
+
 
 > **Veilmi handles encryption and decryption.  
 > UnVeilmi handles Veilmi ciphertext storage.**
@@ -22,6 +26,9 @@
        width="100"
        height="100"
        alt="UnVeilmi icon">
+</p>
+<p align="center">
+  This is the icon for this project.
 </p>
 
 UnVeilmi is a Proof of Concept for a different kind of encrypted communication workflow.
