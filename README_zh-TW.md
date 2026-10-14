@@ -13,6 +13,7 @@
          alt="Veilmi icon">
   </a>
 </p>
+<p align="center">點這 Icon 前往 Veilmi, 這個專案的雙生子。</p>
 
 > **Veilmi 負責加/解密。  
 > UnVeilmi 負責儲存 Veilmi 密文。**
@@ -23,6 +24,7 @@
        height="100"
        alt="UnVeilmi icon">
 </p>
+<p align="center">這才是本專案的 Icon</p>
 
 UnVeilmi 是一個概念驗證（Proof of Concept），用來展示一種不同的加密通訊流程。
 
